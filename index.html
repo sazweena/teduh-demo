@@ -1,0 +1,620 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>[hidden]{display:none!important}</style>
+<title>Teduh Demo</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: a working product. Planner website (sidebar + main) and resident phone, switchable or side by side. */
+:root{
+  --bg:#eef3f0; --surface:#ffffff; --surface-2:#f4f8f6; --ink:#13211c; --muted:#5a6b64; --line:#d5e0da;
+  --accent:#0d6b5b; --accent-ink:#ffffff; --accent-soft:#d9eee8; --side:#12302a; --side-ink:#d7ece5; --side-on:#1e4a40;
+  --host:#34405a; --host-ink:#ffffff; --host-soft:#e7eaf1; --stage:#dfe7e3;
+  --cool:#2e9d6c; --warm:#e0a019; --hot:#d2412a; --night:#4b5f8a; --brown:#7a6a58;
+  --map-bg:#e9eee8; --map-night:#1b2430; --block:#d7ddd6; --block-night:#2a3443; --park:#bfe0c4; --park-night:#22382c;
+  --water:#bcd9ea; --water-night:#1f3448; --road-case:#ffffff; --road-case-night:#0f151d; --label:#33433d; --label-night:#c9d4e2;
+  --shadow:rgba(10,40,30,.35);
+  --display:"Bricolage Grotesque","Avenir Next","Segoe UI",system-ui,sans-serif;
+  --body:"Figtree","Segoe UI",system-ui,-apple-system,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0d1613; --surface:#14201c; --surface-2:#1a2924; --ink:#e3ede8; --muted:#94a69f; --line:#29392f;
+  --accent:#3ec3a4; --accent-ink:#06231c; --accent-soft:#16382f; --side:#0a1714; --side-ink:#bcd6cd; --side-on:#173a32;
+  --host:#a9b6d3; --host-ink:#121826; --host-soft:#222a3a; --stage:#0a120f;
+  --map-bg:#1a2420; --block:#26332d; --park:#1f3a2a; --water:#1d3444; --road-case:#0e1512; --label:#c4d2cb; --shadow:rgba(0,0,0,.6);
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d1613; --surface:#14201c; --surface-2:#1a2924; --ink:#e3ede8; --muted:#94a69f; --line:#29392f;
+  --accent:#3ec3a4; --accent-ink:#06231c; --accent-soft:#16382f; --side:#0a1714; --side-ink:#bcd6cd; --side-on:#173a32;
+  --host:#a9b6d3; --host-ink:#121826; --host-soft:#222a3a; --stage:#0a120f;
+  --map-bg:#1a2420; --block:#26332d; --park:#1f3a2a; --water:#1d3444; --road-case:#0e1512; --label:#c4d2cb; --shadow:rgba(0,0,0,.6);
+  color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:14.5px;line-height:1.45;padding-left:max(0px, env(safe-area-inset-left, 0px));padding-right:max(0px, env(safe-area-inset-right, 0px))}
+h1,h2,h3,h4{font-family:var(--display);margin:0;letter-spacing:-.01em;text-wrap:balance}
+h2{font-size:24px;font-weight:800} h3{font-size:16px;font-weight:800} h4{font-size:14px;font-family:var(--body);font-weight:800}
+p{margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.muted{color:var(--muted)} .note{font-size:12px;color:var(--muted)}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* switcher */
+.switch{position:fixed;bottom:calc(12px + env(safe-area-inset-bottom, 0px));left:max(12px, env(safe-area-inset-left, 0px));z-index:60;display:flex;gap:4px;padding:4px;border-radius:12px;background:var(--surface);border:1px solid var(--line);box-shadow:0 8px 24px -12px var(--shadow)}
+.switch button{border:0;background:transparent;border-radius:8px;padding:6px 10px;font-size:12.5px;font-weight:700;white-space:nowrap}
+.switch button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.switch .sep{width:1px;background:var(--line);margin:2px 2px}
+
+.root{min-height:100%}
+.split{display:grid;grid-template-columns:minmax(0,1fr) 420px;min-height:100vh}
+.split .stage{border-left:1px solid var(--line)}
+
+/* staff */
+.staff{display:grid;grid-template-columns:210px minmax(0,1fr);min-height:100vh;position:relative;background:var(--bg)}
+.side{background:var(--side);color:var(--side-ink);padding:16px 10px;display:flex;flex-direction:column;gap:3px}
+.logo{display:flex;align-items:center;gap:9px;padding:2px 8px 16px;font-family:var(--display);font-weight:800;font-size:20px;color:#fff}
+.logo i,.leaf{width:26px;height:26px;border-radius:9px 2px 9px 2px;background:var(--accent);display:block;flex:none}
+.navb{border:0;background:transparent;color:var(--side-ink);text-align:left;padding:9px 11px;border-radius:9px;font-weight:600;font-size:14px;display:flex;justify-content:space-between;align-items:center}
+.navb:hover{background:var(--side-on)}
+.navb[aria-current="true"]{background:var(--accent);color:var(--accent-ink)}
+.cnt{font-family:var(--mono);font-size:11px;background:var(--hot);color:#fff;padding:0 6px;border-radius:6px}
+.navb .cnt.soft{background:rgba(255,255,255,.18)}
+.side .foot{margin-top:auto;font-size:11.5px;opacity:.7;padding:8px}
+.mainwrap{display:flex;flex-direction:column;min-width:0}
+.topbar{display:flex;align-items:center;gap:12px;padding:12px 22px;border-bottom:1px solid var(--line);background:var(--surface);position:relative;padding-right:max(22px, calc(env(safe-area-inset-right, 0px) + 22px))}
+.topbar select{border:1px solid var(--line);border-radius:9px;padding:6px 10px;background:var(--surface);font-weight:700}
+.topbar .sp{flex:1}
+.iconbtn{position:relative;border:1px solid var(--line);background:var(--surface);border-radius:10px;width:38px;height:38px;display:grid;place-items:center;font-weight:800}
+.iconbtn .cnt{position:absolute;top:-6px;right:-6px}
+.avatar{border:0;width:38px;height:38px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-weight:800}
+.dropdown{position:absolute;top:56px;right:70px;width:330px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 18px 40px -18px var(--shadow);z-index:30;padding:8px;display:flex;flex-direction:column;gap:4px}
+.dditem{border:0;background:transparent;text-align:left;padding:8px 10px;border-radius:8px;display:flex;gap:10px;align-items:flex-start;font-size:13px;width:100%}
+.dditem:hover{background:var(--surface-2)}
+.main{padding:20px 22px 80px;display:flex;flex-direction:column;gap:16px;min-width:0}
+.mh{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.mh p{font-size:13px;color:var(--muted)}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.kpi{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--surface);text-align:left}
+button.kpi:hover{border-color:var(--accent)}
+.kpi b{display:block;font-family:var(--display);font-size:28px;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums}
+.kpi span{font-size:12px;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:14px}
+.box{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--surface);display:flex;flex-direction:column;gap:10px;min-width:0}
+.rowbtn{border:0;border-bottom:1px solid var(--line);background:transparent;text-align:left;display:flex;align-items:center;gap:10px;justify-content:space-between;padding:8px 2px;width:100%;font-size:13.5px}
+.rowbtn:last-of-type{border-bottom:0}
+.rowbtn:hover{background:var(--surface-2)}
+.rowbtn small{display:block;color:var(--muted);font-size:12px}
+svg.map{display:block;width:100%;height:auto;border-radius:10px;background:var(--map-bg)}
+svg.map.night{background:var(--map-night)}
+.pill{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;border:1px solid var(--line);background:var(--surface-2);white-space:nowrap}
+.st-Received{background:var(--surface-2)}
+.st-Seen{background:color-mix(in srgb,var(--night) 22%,transparent);border-color:transparent}
+.st-Planned{background:color-mix(in srgb,var(--warm) 26%,transparent);border-color:transparent}
+.st-Built{background:var(--accent-soft);color:var(--accent);border-color:transparent}
+.new{background:var(--hot);color:#fff;border-color:transparent}
+.controls{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)}
+.seg button{border:0;background:transparent;padding:7px 13px;font-weight:600;font-size:13px}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.slider{display:flex;align-items:center;gap:10px;flex:1;min-width:200px}
+.slider input{flex:1;accent-color:var(--accent)}
+.big{font-family:var(--display);font-weight:800;font-size:19px;min-width:78px}
+.chk{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;border:1px solid var(--line);border-radius:999px;padding:5px 10px;background:var(--surface)}
+.chk[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.ramp{display:inline-block;width:90px;height:7px;border-radius:4px;background:linear-gradient(90deg,var(--cool),var(--warm),var(--hot));vertical-align:middle;margin:0 6px}
+.bars{display:flex;flex-direction:column;gap:8px}
+.bar{display:grid;grid-template-columns:110px minmax(0,1fr) 44px;gap:10px;align-items:center;font-size:13px}
+.track{height:9px;border-radius:5px;background:var(--surface-2);border:1px solid var(--line);overflow:hidden}
+.fill{height:100%}
+.rank{font-family:var(--mono);font-weight:600;font-size:12px;padding:3px 8px;border-radius:6px;color:#fff}
+.sname{font-family:var(--display);font-size:24px;font-weight:800;line-height:1.05}
+.reason{font-size:13.5px;background:var(--surface-2);border-left:3px solid var(--hot);padding:9px 12px;border-radius:0 8px 8px 0}
+.btn{border:0;border-radius:10px;padding:9px 14px;font-weight:700;background:var(--accent);color:var(--accent-ink);font-size:13.5px}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--ink)}
+.btn.sm{padding:5px 10px;font-size:12px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+.kv{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.kv div{font-size:12px;color:var(--muted)}
+.kv b{display:block;font-size:17px;color:var(--ink);font-variant-numeric:tabular-nums}
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+tbody tr:last-child td{border-bottom:0}
+th{font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);background:var(--surface-2)}
+tr.click{cursor:pointer} tr.click:hover td{background:var(--surface-2)}
+tr.out td{opacity:.45}
+td.num,th.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.tick{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:6px;border:1.5px solid var(--line);font-size:12px;font-weight:800;background:var(--surface)}
+.tick.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.compare{font-size:13.5px;padding:10px 12px;border-radius:10px;background:var(--accent-soft)}
+.ic{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;color:#fff;font-size:11px;font-weight:800;flex:none}
+.tabsf{display:flex;gap:6px;flex-wrap:wrap}
+.tabsf button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 12px;font-size:12.5px;font-weight:700}
+.tabsf button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.pillars{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.pillar{border:1px solid var(--line);border-radius:12px;padding:12px;font-size:13px;background:var(--surface)}
+.pillar b{display:block;font-size:14px}
+.ba{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.ba div{border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--surface)}
+.ba small{display:block;font-size:12px;color:var(--muted)}
+.ba b{font-family:var(--display);font-size:24px;font-weight:800}
+.later{font-size:13px;border:1.5px dashed var(--line);border-radius:12px;padding:10px 12px;color:var(--muted)}
+.srcs{margin:0;padding-left:18px;font-size:13.5px;display:flex;flex-direction:column;gap:6px}
+
+.scrim{position:fixed;inset:0;left:210px;background:rgba(8,20,16,.28);z-index:20}
+.split .scrim{right:420px}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(420px,100%);background:var(--surface);border-left:1px solid var(--line);z-index:25;display:flex;flex-direction:column;box-shadow:-20px 0 40px -30px var(--shadow)}
+.split .drawer{right:420px}
+.dhead{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line);gap:10px}
+.dbody{padding:16px;overflow:auto;display:flex;flex-direction:column;gap:14px}
+.x{border:1px solid var(--line);background:var(--surface);border-radius:9px;width:32px;height:32px;font-weight:800}
+.photo{border-radius:12px;overflow:hidden;border:1px solid var(--line);aspect-ratio:4/3;max-width:100%;background:var(--surface-2);display:block}
+.photo img{width:100%;height:100%;object-fit:cover;display:block}
+.stepper{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.stepper button{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 4px;font-size:12px;font-weight:700}
+.stepper button.done{background:var(--accent-soft);border-color:transparent;color:var(--accent)}
+.stepper button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:9px 10px;background:var(--surface);resize:vertical;min-height:64px}
+.hist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;font-size:13px}
+.hist li{border-left:2px solid var(--line);padding-left:10px}
+.hist small{display:block;color:var(--muted)}
+
+.modalwrap{position:fixed;inset:0;background:rgba(8,20,16,.45);z-index:80;display:grid;place-items:center;padding:16px}
+.modal{background:var(--surface);border-radius:16px;width:min(520px,100%);padding:18px;display:flex;flex-direction:column;gap:12px;box-shadow:0 30px 60px -30px var(--shadow)}
+.modal textarea{font-family:var(--mono);font-size:12px;min-height:150px}
+.toast{position:fixed;left:50%;bottom:calc(70px + env(safe-area-inset-bottom, 0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:700;font-size:13.5px;z-index:90;box-shadow:0 12px 30px -12px var(--shadow);max-width:calc(100% - 32px)}
+
+/* phone */
+.stage{background:var(--stage);display:flex;justify-content:center;align-items:flex-start;padding:30px 16px 80px;min-height:100vh}
+.phone{width:375px;max-width:100%;border:11px solid #0f1714;border-radius:48px;background:var(--surface);overflow:hidden;box-shadow:0 30px 60px -30px var(--shadow);position:relative}
+.scr{height:760px;max-height:calc(100vh - 120px);min-height:600px;display:flex;flex-direction:column;position:relative;overflow:hidden}
+.island{position:absolute;top:8px;left:50%;transform:translateX(-50%);width:96px;height:26px;border-radius:14px;background:#0f1714;z-index:5}
+.status{display:flex;justify-content:space-between;align-items:center;padding:11px 24px 4px;font-size:12px;font-weight:700;font-family:var(--mono)}
+.pbody{flex:1;overflow-y:auto;padding:8px 16px 16px;display:flex;flex-direction:column;gap:12px}
+.pbar{display:flex;align-items:center;gap:10px;padding:4px 16px 8px}
+.back{border:0;background:var(--surface-2);width:32px;height:32px;border-radius:50%;font-weight:800;font-size:18px;line-height:1}
+.pbar .t{font-weight:800;font-size:16px;display:block}
+.pbar .s{font-size:11px;color:var(--muted);display:block}
+.pnav{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line);padding:6px 6px 14px}
+.pnav button{border:0;background:transparent;font-size:11px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px;position:relative;font-weight:600}
+.pnav i{width:20px;height:20px;border-radius:6px;background:var(--line);display:block}
+.pnav button[aria-current="true"]{color:var(--host)} .pnav button[aria-current="true"] i{background:var(--host)}
+.pnav .cnt{position:absolute;top:-4px;right:calc(50% - 22px)}
+.hosthead{background:var(--host);color:var(--host-ink);margin:-8px -16px 0;padding:14px 18px 18px;display:flex;flex-direction:column;gap:2px}
+.hosthead small{opacity:.8}
+.hosthead b{font-family:var(--display);font-size:22px}
+.unit{background:var(--surface);color:var(--ink);border-radius:12px;padding:10px 12px;margin-top:10px;font-size:12.5px;display:flex;justify-content:space-between;gap:8px;align-items:center}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tile{border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:10px 6px;text-align:center;font-size:11.5px;font-weight:600;line-height:1.25;position:relative}
+.tile i{display:block;width:30px;height:30px;border-radius:9px;margin:0 auto 6px;background:var(--host-soft)}
+.tile.teduh{border:2px solid var(--accent);background:var(--accent-soft)}
+.tile.teduh i{background:var(--accent);position:relative}
+.tile.teduh i::after{content:"";position:absolute;inset:7px 9px 9px 7px;border-radius:9px 2px 9px 2px;background:var(--accent-ink)}
+.badge{position:absolute;top:-7px;right:-5px;background:var(--hot);color:#fff;font-size:9.5px;font-weight:800;padding:1px 6px;border-radius:999px}
+.card{border:1px solid var(--line);border-radius:14px;padding:11px 12px;background:var(--surface);text-align:left;width:100%;display:block}
+button.card:hover{border-color:var(--accent)}
+.cardrow{display:flex;justify-content:space-between;gap:10px;align-items:center}
+.sm-t{font-size:12px;color:var(--muted)}
+.heat{border:0;border-radius:18px;padding:14px;color:#fff;background:linear-gradient(135deg,var(--hot),var(--warm));display:flex;justify-content:space-between;align-items:flex-end;gap:10px;text-align:left;width:100%}
+.heat b{font-family:var(--display);font-size:38px;font-weight:800;line-height:.95;display:block}
+.heat span{font-size:12px}
+svg.mm{flex:none;width:100%;height:auto;border-radius:14px;border:1px solid var(--line);background:var(--map-bg);display:block}
+.legend{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:-6px}
+.cta{border:0;border-radius:14px;padding:14px;font-weight:800;font-size:15px;background:var(--accent);color:var(--accent-ink);width:100%}
+.cta.ghost{background:transparent;border:1px solid var(--line);color:var(--ink);font-weight:700}
+.cta:disabled{opacity:.45;cursor:not-allowed}
+.opt{width:100%;text-align:left;border:1px solid var(--line);background:var(--surface-2);border-radius:14px;padding:12px;display:flex;gap:12px;align-items:center;font-weight:700}
+.opt small{display:block;font-weight:500;font-size:12px;color:var(--muted)}
+.sw{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;color:#fff;font-weight:800;flex:none}
+.metoo{display:flex;gap:10px;align-items:center;justify-content:space-between;background:color-mix(in srgb,var(--warm) 18%,var(--surface));border-radius:12px;padding:10px 12px;font-size:12.5px}
+.metoo button{border:0;border-radius:10px;padding:8px 12px;font-weight:800;background:var(--ink);color:var(--bg);white-space:nowrap}
+.upl{border:1.5px dashed var(--line);border-radius:12px;padding:10px 12px;font-size:13px;color:var(--muted);display:flex;justify-content:space-between;align-items:center;gap:10px;cursor:pointer}
+.upl input{position:absolute;width:1px;height:1px;opacity:0}
+.thumb{width:54px;height:54px;border-radius:10px;object-fit:cover;flex:none}
+.psteps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.psteps li{display:grid;grid-template-columns:26px 1fr;gap:10px;padding-bottom:14px;position:relative}
+.psteps li::after{content:"";position:absolute;left:12px;top:24px;bottom:2px;width:2px;background:var(--line)}
+.psteps li:last-child::after{display:none}
+.dot{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:800;border:2px solid var(--line);background:var(--surface);color:var(--muted);z-index:1}
+.dot.done{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.dot.now{border-color:var(--accent);color:var(--accent)}
+.psteps b{display:block;font-size:14px}
+.reply{background:var(--accent-soft);border-radius:12px;padding:10px 12px;font-size:13px}
+.reply small{display:block;color:var(--muted);font-size:11px}
+.bafig{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.bafig figure{margin:0;display:flex;flex-direction:column;gap:4px}
+.bafig figcaption{font-size:11.5px;font-weight:700;text-align:center}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.stats div{background:var(--surface-2);border-radius:10px;padding:8px;font-size:11px;color:var(--muted)}
+.stats b{display:block;font-size:16px;color:var(--ink);font-family:var(--display)}
+.nitem{border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:11px 12px;text-align:left;display:flex;gap:10px;width:100%}
+.nitem.unread{border-color:var(--accent);background:var(--accent-soft)}
+.nitem small{display:block;color:var(--muted);font-size:11.5px}
+.banner{position:absolute;top:44px;left:10px;right:10px;background:var(--ink);color:var(--bg);border-radius:16px;padding:10px 12px;font-size:12.5px;z-index:6;box-shadow:0 14px 30px -14px var(--shadow);border:0;text-align:left}
+.banner b{display:block}
+.browser{background:var(--surface-2);border-bottom:1px solid var(--line);padding:8px 14px;display:flex;gap:8px;align-items:center;font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+.browser span{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px 10px;text-align:center}
+.chips{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.chip{border:1px solid var(--line);border-radius:12px;padding:10px;font-size:12.5px;font-weight:700;background:var(--surface);text-align:left;display:flex;gap:8px;align-items:center}
+.chip .sw{width:26px;height:26px;border-radius:8px;font-size:12px}
+.chip[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.sheet{border:1px solid var(--line);border-radius:14px;padding:12px;background:var(--surface-2);display:flex;flex-direction:column;gap:8px}
+
+@media (max-width:1100px){.split .scrim{right:0}.split .drawer{right:0}.split{grid-template-columns:minmax(0,1fr)}.split .stage{border-left:0;border-top:1px solid var(--line);min-height:auto}}
+@media (max-width:900px){.scrim{left:0}.staff{grid-template-columns:minmax(0,1fr)}.side{flex-direction:row;overflow-x:auto;padding:8px;gap:4px}.logo,.side .foot{display:none}.navb{white-space:nowrap}.kpis,.ba{grid-template-columns:repeat(2,minmax(0,1fr))}.pillars,.grid2{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:520px){.main{padding:14px 14px 40px}.topbar{padding-left:14px;padding-right:14px}.bar{grid-template-columns:86px minmax(0,1fr) 38px}.stage{padding:0 0 64px}.phone{border:0;border-radius:0;width:100%;box-shadow:none}.scr{height:calc(100vh - 64px);max-height:none}.island{display:none}.dropdown{right:10px;width:calc(100% - 20px)}.switch button{padding:6px 7px;font-size:11.5px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+</head>
+<body>
+<div id="root" class="root"></div>
+
+<script>
+(function(){
+/* ---------- data ---------- */
+const PX_M=1.5;
+const P={school:{7:1,8:.9,9:.2,10:.15,11:.2,12:.5,13:1,14:.8,15:.4,16:.3,17:.3,18:.25,19:.15,20:.1,21:.05,22:.03,23:.01},
+ transit:{7:1,8:1,9:.6,10:.4,11:.4,12:.5,13:.5,14:.5,15:.5,16:.6,17:.9,18:1,19:.8,20:.6,21:.4,22:.25,23:.1},
+ mall:{8:.1,9:.2,10:.4,11:.6,12:.8,13:.8,14:.7,15:.7,16:.8,17:.9,18:1,19:1,20:.9,21:.7,22:.4,23:.1},
+ res:{7:.6,8:.6,9:.4,10:.3,11:.3,12:.4,13:.4,14:.4,15:.4,16:.5,17:.7,18:.8,19:.7,20:.6,21:.4,22:.2,23:.1},
+ park:{7:.8,8:.6,9:.3,10:.2,11:.15,12:.15,13:.15,14:.15,15:.2,16:.4,17:.8,18:1,19:.8,20:.5,21:.3,22:.1,23:0}};
+const WHO={school:"schoolchildren and parents",transit:"bus and future LRT riders",mall:"shoppers and mall workers",res:"residents",park:"joggers, families, older residents"};
+const S=[
+ {id:"s1",name:"Persiaran Elmina (west)",pts:[[20,180],[220,180]],type:"res",peak:40,trees:.55,bldg:.1,vul:.5,gap:.2,dark:.2},
+ {id:"s2",name:"Persiaran Elmina (centre)",pts:[[220,180],[420,180]],type:"transit",peak:110,trees:.1,bldg:.1,vul:.6,gap:.7,dark:.3,why:"A wide avenue with young trees and no safe crossing between the bus stop and the houses.",fix:{mode:"day",label:"Raised zebra + refuge island + 14 trees",cost:150000,eff:{trees:.55,gap:.1}}},
+ {id:"s3",name:"Persiaran Elmina (east)",pts:[[420,180],[620,180]],type:"mall",peak:70,trees:.3,bldg:.2,vul:.5,gap:.4,dark:.25},
+ {id:"s4",name:"Jalan Elmina 3",pts:[[300,60],[300,180]],type:"school",peak:120,trees:.05,bldg:.15,vul:.95,gap:.9,dark:.5,why:"The school run and the walk to the bus stop share this street. Almost no shade at midday, a primary school 150 m away, and no safe crossing at the avenue.",fix:{mode:"day",label:"8 trees + shade sail + raised zebra",cost:70000,eff:{trees:.8,gap:.1}}},
+ {id:"s5",name:"Jalan Sekolah (west)",pts:[[200,60],[300,60]],type:"school",peak:60,trees:.5,bldg:.1,vul:.9,gap:.3,dark:.3},
+ {id:"s6",name:"Jalan Sekolah (to bus stop)",pts:[[300,60],[440,60]],type:"transit",peak:90,trees:.1,bldg:.1,vul:.7,gap:.3,dark:.6,why:"The main walk to the bus stop and the future LRT. Open pavement and a small bus-stop roof.",fix:{mode:"day",label:"Shade sails along 200 m + bigger bus-stop roof",cost:45000,eff:{trees:.65}}},
+ {id:"s7",name:"Jalan Elmina 9",pts:[[460,60],[460,180]],type:"res",peak:35,trees:.4,bldg:.3,vul:.4,gap:.2,dark:.3},
+ {id:"s8",name:"Jalan Kanopi",pts:[[540,100],[540,180]],type:"res",peak:70,trees:.05,bldg:.1,vul:.5,gap:.5,dark:.4,why:"The new tower's residents walk here, but the street trees were only just planted.",fix:{mode:"day",label:"12 fast-growing trees + temporary sails",cost:38000,eff:{trees:.6}}},
+ {id:"s9",name:"Jalan Tasik (to the mall)",pts:[[440,180],[455,240],[480,300]],type:"mall",peak:100,trees:.1,bldg:.05,vul:.55,gap:.4,dark:.4,why:"The walk from the avenue to the mall and the lake. Open the whole way, busiest in the late afternoon.",fix:{mode:"day",label:"Covered walkway, 180 m, solar roof",cost:160000,eff:{trees:.9}}},
+ {id:"s10",name:"Jalan Pasar",pts:[[420,240],[620,240]],type:"mall",peak:45,trees:.35,bldg:.3,vul:.5,gap:.3,dark:.3},
+ {id:"s11",name:"Lingkaran Taman",pts:[[220,180],[220,300],[200,420]],type:"park",peak:60,trees:.7,bldg:0,vul:.6,gap:.3,dark:.85,whyN:"Shady by day, very dark after 7pm under the trees.",fix:{mode:"night",label:"8 adaptive solar streetlights",cost:48000,eff:{dark:.15}}},
+ {id:"s12",name:"Jalan Elmina 2",pts:[[300,180],[300,300]],type:"res",peak:40,trees:.45,bldg:.2,vul:.5,gap:.2,dark:.3},
+ {id:"s13",name:"Jalan Elmina 5",pts:[[380,180],[380,300]],type:"res",peak:35,trees:.5,bldg:.2,vul:.5,gap:.2,dark:.35},
+ {id:"s14",name:"Jalan Elmina 7",pts:[[220,300],[440,300]],type:"res",peak:50,trees:.4,bldg:.2,vul:.5,gap:.3,dark:.4},
+ {id:"s15",name:"Jalan Rimba",pts:[[220,380],[440,380]],type:"park",peak:55,trees:.75,bldg:0,vul:.65,gap:.5,dark:.9,whyN:"A dark park edge with no lit crossing to the houses.",fix:{mode:"night",label:"Solar studs + 6 lights + raised crossing",cost:62000,eff:{dark:.15,gap:.1}}},
+ {id:"s16",name:"Jalan Lakeside",pts:[[560,280],[620,400]],type:"mall",peak:40,trees:.3,bldg:.1,vul:.4,gap:.3,dark:.5},
+ {id:"s17",name:"Jalan Elmina 1",pts:[[120,60],[120,180]],type:"res",peak:30,trees:.6,bldg:.2,vul:.5,gap:.2,dark:.3},
+ {id:"s18",name:"Jalan Teratai",pts:[[20,110],[200,110]],type:"res",peak:30,trees:.55,bldg:.2,vul:.5,gap:.2,dark:.3},
+ {id:"s19",name:"Laluan Taman (park path)",pts:[[40,300],[90,350],[150,330],[180,400]],type:"park",peak:50,trees:.85,bldg:0,vul:.5,gap:0,dark:.6},
+ {id:"s20",name:"Jalan Elmina 4",pts:[[380,300],[380,380]],type:"res",peak:30,trees:.5,bldg:.1,vul:.5,gap:.2,dark:.45}];
+S.forEach(s=>{let L=0;for(let i=1;i<s.pts.length;i++)L+=Math.hypot(s.pts[i][0]-s.pts[i-1][0],s.pts[i][1]-s.pts[i-1][1]);s.len=Math.round(L*PX_M);});
+const byId=Object.fromEntries(S.map(s=>[s.id,s]));
+const KIND={hot:{l:"Too hot / no shade",d:"No trees or roof where people walk",c:"var(--hot)",g:"☀"},cross:{l:"No safe crossing",d:"Hard or unsafe to cross the road",c:"var(--warm)",g:"⇄"},dark:{l:"Too dark",d:"Street or path too dark at night",c:"var(--night)",g:"☾"},broken:{l:"Broken path",d:"Cracked, blocked or missing pavement",c:"var(--brown)",g:"!"}};
+const STATUSES=["Received","Seen","Planned","Built"];
+
+function seed(){return {
+ view:"staff",
+ staff:{screen:"overview",drawer:null,filter:"All",bell:false,layers:{reports:true,fixes:true},period:"this",avatar:false},
+ mode:"day",hour:14,tried:new Set(),manual:{},budget:300000,modal:null,toast:null,nextId:1042,
+ reports:[
+  {id:"R-1041",sid:"s4",kind:"hot",metoo:23,age:"2 days ago",status:"Planned",note:"No shade at all at 1pm school pick-up",src:"Owner app",mine:false,follow:true,replies:[{who:"Township team",t:"Thank you. Shade sail and a raised crossing are planned for March.",when:"Yesterday"}]},
+  {id:"R-1038",sid:"s6",kind:"hot",metoo:6,age:"4 days ago",status:"Seen",note:"Bus stop roof too small, everyone waits in the sun",src:"QR sticker",replies:[]},
+  {id:"R-1035",sid:"s11",kind:"dark",metoo:9,age:"5 days ago",status:"Built",note:"Too dark to jog after Maghrib",src:"Owner app",follow:true,replies:[{who:"Township team",t:"8 solar lights are now installed.",when:"2 days ago"}]},
+  {id:"R-1033",sid:"s15",kind:"dark",metoo:4,age:"1 week ago",status:"Received",note:"No light at the park crossing",src:"Owner app",replies:[]},
+  {id:"R-1030",sid:"s10",kind:"broken",metoo:2,age:"1 week ago",status:"Received",note:"Broken paving slab near the drain",src:"QR sticker",replies:[]},
+  {id:"R-1027",sid:"s2",kind:"cross",metoo:11,age:"2 weeks ago",status:"Seen",note:"Kids run across 4 lanes to the bus stop",src:"Owner app",replies:[]},
+  {id:"R-1022",sid:"s8",kind:"hot",metoo:3,age:"2 weeks ago",status:"Received",note:"New trees give no shade yet",src:"Owner app",mine:true,replies:[]},
+  {id:"R-1019",sid:"s9",kind:"hot",metoo:5,age:"3 weeks ago",status:"Seen",note:"Very hot walk to the mall after school",src:"Owner app",replies:[]}],
+ notifs:[
+  {id:1,kind:"heat",title:"Heat alert: 36°C expected tomorrow",body:"Schools pause outdoor activities above 35°C. For pick-up, the north side of Jalan Sekolah is shaded until 3pm.",when:"1 h ago",unread:true},
+  {id:2,kind:"report",rid:"R-1041",title:"Jalan Elmina 3 is now Planned",body:"Shade sail and raised crossing, planned for March.",when:"Yesterday",unread:true},
+  {id:3,kind:"report",rid:"R-1035",title:"Lingkaran Taman: fix built",body:"8 solar lights installed. See the before and after.",when:"2 days ago",unread:false}],
+ nextN:4,
+ phone:{screen:"host",hist:[],draft:null,rid:null,fixSid:"s11",sheet:null,qr:false,web:{kind:null,photo:null,sent:false},banner:null}
+};}
+let st=seed();
+
+/* ---------- scoring ---------- */
+const isBuilt=s=>s.fix&&st.reports.some(r=>r.sid===s.id&&r.status==="Built");
+const active=(s,extra)=>s.fix&&(st.tried.has(s.id)||isBuilt(s)||(extra&&extra.has(s.id)));
+const v=(s,k,extra)=>active(s,extra)&&k in s.fix.eff?s.fix.eff[k]:s[k];
+const walkers=(s,h)=>s.peak*(P[s.type][h]||0);
+const shade=(s,h,extra)=>Math.min(.95,v(s,"trees",extra)+s.bldg*Math.min(1,Math.abs(h-13)/5));
+const rawD=(s,h,extra)=>walkers(s,h)*(1-shade(s,h,extra))*s.vul*(.4+.6*v(s,"gap",extra));
+const rawN=(s,h,extra)=>walkers(s,h)*v(s,"dark",extra)*s.vul*(.4+.6*v(s,"gap",extra));
+let DMAX=0,NMAX=0;S.forEach(s=>{for(let h=8;h<=19;h++)DMAX=Math.max(DMAX,s.peak*(P[s.type][h]||0)*(1-Math.min(.95,s.trees+s.bldg*Math.min(1,Math.abs(h-13)/5)))*s.vul*(.4+.6*s.gap));for(let h=19;h<=23;h++)NMAX=Math.max(NMAX,s.peak*(P[s.type][h]||0)*s.dark*s.vul*(.4+.6*s.gap));});
+const score=(s,mode=st.mode,h=st.hour,extra)=>Math.round(100*Math.sqrt(Math.max(0,mode==="day"?rawD(s,h,extra)/DMAX:rawN(s,h,extra)/NMAX)));
+const daily=s=>{let t=0;for(let h=7;h<=22;h++)t+=walkers(s,h);return Math.round(t/10)*10;};
+const gain=s=>s.fix.eff.trees!=null?Math.round(s.len*(s.fix.eff.trees-s.trees)):s.len;
+const value=s=>daily(s)/(s.fix.cost/10000);
+const FIXES=S.filter(s=>s.fix).sort((a,b)=>value(b)-value(a));
+const col=x=>{const c=[[46,157,108],[224,160,25],[210,65,42]];const t=Math.max(0,Math.min(1,x/100));const a=t<.5?c[0]:c[1],b=t<.5?c[1]:c[2],u=t<.5?t*2:(t-.5)*2;return `rgb(${a.map((q,i)=>Math.round(q+(b[i]-q)*u)).join(",")})`;};
+const fmtH=h=>`${((h+11)%12)+1}:00 ${h>=12?"pm":"am"}`;
+const rm=n=>n>=1e6?"RM"+(n/1e6).toFixed(1)+"m":"RM"+Math.round(n/1000)+"k";
+const esc=t=>String(t==null?"":t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const pth=s=>"M"+s.pts.map(p=>p.join(",")).join(" L");
+const mid=s=>{const i=Math.floor((s.pts.length-1)/2),a=s.pts[i],b=s.pts[i+1];return[(a[0]+b[0])/2,(a[1]+b[1])/2];};
+const shadedPct=extra=>{let a=0,b=0;S.forEach(s=>{a+=s.len*shade(s,14,extra);b+=s.len;});return Math.round(100*a/b);};
+const redCount=extra=>S.filter(s=>score(s,"day",14,extra)>=65).length;
+function planSet(budget=st.budget,useManual=true){let left=budget;const pick=new Set();FIXES.forEach(s=>{if(s.fix.cost<=left){pick.add(s.id);left-=s.fix.cost;}});
+ if(useManual)Object.entries(st.manual).forEach(([id,on])=>{on?pick.add(id):pick.delete(id);});return pick;}
+const openReports=()=>st.reports.filter(r=>r.status!=="Built");
+const fresh=()=>st.reports.filter(r=>r.fresh);
+const repById=id=>st.reports.find(r=>r.id===id);
+
+/* ---------- map ---------- */
+function mapSVG({mode=st.mode,hour=st.hour,sel=null,attr="",showReports=true,showFixes=true,colour=true,pin=null,home=false,vb="0 0 640 440",override={},cls="map",onlyMine=false}={}){
+ const night=mode==="night";const B=night?"var(--block-night)":"var(--block)",PK=night?"var(--park-night)":"var(--park)",W=night?"var(--water-night)":"var(--water)",L=night?"var(--label-night)":"var(--label)",RC=night?"var(--road-case-night)":"var(--road-case)";
+ let g=`<path d="M20,250 Q60,230 200,240 L210,425 L20,425 Z" fill="${PK}"/><ellipse cx="520" cy="350" rx="70" ry="45" fill="${W}"/>`;
+ [[30,120,80,50],[130,120,80,50],[30,62,80,40],[130,62,60,40],[230,70,60,100],[310,70,60,100],[380,70,70,100],[470,70,60,22],[470,110,60,60],[555,70,60,100],[230,190,60,100],[310,190,60,100],[390,190,40,40],[230,310,140,60],[390,310,40,60],[500,190,110,40],[490,250,70,40]].forEach(b=>g+=`<rect x="${b[0]}" y="${b[1]}" width="${b[2]}" height="${b[3]}" rx="3" fill="${B}"/>`);
+ S.forEach(s=>g+=`<path d="${pth(s)}" fill="none" stroke="${RC}" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>`);
+ S.forEach(s=>{const c=override[s.id]||(colour?col(score(s,mode,hour)):"var(--line)");const on=s.id===sel;if(on)g+=`<path d="${pth(s)}" fill="none" stroke="${c}" stroke-opacity=".3" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>`;g+=`<path d="${pth(s)}" fill="none" stroke="${c}" stroke-width="${on?9:7}" stroke-linecap="round" stroke-linejoin="round"/>`;});
+ const t=(x,y,s)=>`<text x="${x}" y="${y}" font-family="Figtree,sans-serif" font-size="11" font-weight="700" fill="${L}" text-anchor="middle" pointer-events="none">${s}</text>`;
+ g+=t(265,100,"SK Elmina")+t(525,274,"Lakeside Mall")+t(80,280,"Central Park")+t(575,104,"Kanopi")+t(520,354,"Lake");
+ g+=`<g transform="translate(440,48)" pointer-events="none"><rect x="-9" y="-9" width="18" height="18" rx="4" fill="var(--accent)"/><text y="4" text-anchor="middle" font-size="11" font-weight="800" fill="var(--accent-ink)" font-family="Figtree,sans-serif">B</text></g>`;
+ if(showFixes)S.forEach(s=>{if(s.fix&&(st.tried.has(s.id)||isBuilt(s))){const [x,y]=mid(s);g+=`<g transform="translate(${x-12},${y+12})" pointer-events="none"><circle r="8" fill="var(--surface)" stroke="var(--cool)" stroke-width="2"/><text y="4" text-anchor="middle" font-size="10" font-weight="800" fill="var(--cool)" font-family="Figtree,sans-serif">✓</text></g>`;}});
+ if(showReports){const groups={};st.reports.filter(r=>r.status!=="Built"&&(!onlyMine||r.mine||r.follow)).forEach(r=>{(groups[r.sid]=groups[r.sid]||[]).push(r);});
+  Object.entries(groups).forEach(([sid,rs])=>{const s=byId[sid];const [x,y]=mid(s);const n=rs.reduce((a,r)=>a+r.metoo+1,0);const k=KIND[rs[0].kind];const nw=rs.some(r=>r.fresh);
+   g+=`<g transform="translate(${x+12},${y-12})" pointer-events="none">${nw?`<circle r="15" fill="var(--hot)" opacity=".25"/>`:""}<circle r="10" fill="${k.c}" stroke="var(--surface)" stroke-width="2"/><text y="3.5" text-anchor="middle" font-size="9" font-weight="800" fill="#fff" font-family="Figtree,sans-serif">${onlyMine?k.g:n}</text></g>`;});}
+ if(home)g+=`<g transform="translate(340,250)" pointer-events="none"><circle r="14" fill="var(--host)" stroke="var(--surface)" stroke-width="3"/><path d="M-7,2 L0,-6 L7,2 L7,8 L-7,8 Z" fill="var(--host-ink)"/></g>`;
+ if(pin){const k=KIND[pin.kind];g+=`<g transform="translate(${pin.x},${pin.y})" pointer-events="none"><path d="M0,0 C-14,-16 -14,-34 0,-34 C14,-34 14,-16 0,0 Z" fill="${k.c}" stroke="var(--surface)" stroke-width="3"/><text y="-18" text-anchor="middle" font-size="13" font-weight="800" fill="#fff" font-family="Figtree,sans-serif">${k.g}</text></g>`;}
+ const se=byId[sel];if(se&&cls==="map"){const [x,y]=mid(se);const w=se.name.length*6.3+16;const vert=Math.abs(se.pts[0][0]-se.pts[se.pts.length-1][0])<20;let lx=vert?x+26:x-w/2,ly=vert?y-10:(y<40?y+16:y-36);lx=Math.min(Math.max(lx,4),636-w);g+=`<g pointer-events="none"><rect x="${lx}" y="${ly}" width="${w}" height="20" rx="6" fill="var(--ink)"/><text x="${lx+w/2}" y="${ly+14}" text-anchor="middle" font-size="11.5" font-weight="700" fill="var(--bg)" font-family="Figtree,sans-serif">${esc(se.name)}</text></g>`;}
+ if(attr&&attr!=="data-pick")S.forEach(s=>g+=`<path d="${pth(s)}" ${attr}="${s.id}" fill="none" stroke="transparent" stroke-width="26" stroke-linecap="round" style="cursor:pointer"><title>${esc(s.name)}</title></path>`);
+ return `<svg class="${cls}${night?" night":""}" viewBox="${vb}" ${attr==="data-pick"?'data-pick="1" style="cursor:crosshair"':""} role="img" aria-label="Street map">${g}</svg>`;
+}
+function nearest(x,y){let best=null,bd=1e9;S.forEach(s=>{const p=s.pts;for(let i=1;i<p.length;i++){const [ax,ay]=p[i-1],[bx,by]=p[i];const dx=bx-ax,dy=by-ay;const t=Math.max(0,Math.min(1,((x-ax)*dx+(y-ay)*dy)/(dx*dx+dy*dy||1)));const d=Math.hypot(ax+t*dx-x,ay+t*dy-y);if(d<bd){bd=d;best={sid:s.id,x:Math.round(ax+t*dx),y:Math.round(ay+t*dy)};}}});return best;}
+const placeholderPhoto=(kind)=>{const k=KIND[kind];return `<svg viewBox="0 0 400 300" class="photo" role="img" aria-label="Photo"><rect width="400" height="300" fill="var(--surface-2)"/><rect y="190" width="400" height="110" fill="var(--block)"/><path d="M0,190 L400,190" stroke="var(--line)" stroke-width="3"/><circle cx="330" cy="70" r="34" fill="${kind==="dark"?"var(--night)":"var(--warm)"}" opacity=".8"/><rect x="40" y="110" width="14" height="80" fill="var(--muted)"/><text x="200" y="260" text-anchor="middle" font-family="Figtree,sans-serif" font-size="16" font-weight="700" fill="var(--muted)">${k.l}</text></svg>`;};
+
+/* ---------- helpers ---------- */
+const bar=(l,x,c,t)=>`<div class="bar"><span>${l}</span><div class="track"><div class="fill" style="width:${Math.round(x*100)}%;background:${c}"></div></div><span class="mono">${t}</span></div>`;
+const pill=s=>`<span class="pill st-${s}">${s}</span>`;
+const ic=k=>`<span class="ic" style="background:${KIND[k].c}">${KIND[k].g}</span>`;
+let toastTimer=null,bannerTimer=null;
+function toast(t){st.toast=t;clearTimeout(toastTimer);toastTimer=setTimeout(()=>{st.toast=null;render();},2600);}
+function notifyResident(r,title,body){if(!(r.mine||r.follow))return;st.notifs.unshift({id:st.nextN++,kind:"report",rid:r.id,title,body,when:"now",unread:true});
+ st.phone.banner={title,body,rid:r.id};clearTimeout(bannerTimer);bannerTimer=setTimeout(()=>{st.phone.banner=null;render();},4500);}
+
+/* ---------- staff screens ---------- */
+const NAV=[["overview","Overview"],["map","Map"],["plan","Fix plan"],["reports","Reports"],["impact","Impact"],["sources","Sources"]];
+function staffHTML(){const S2=st.staff;const nf=fresh().length;
+ const scr={overview,map:mapScreen,plan,reports,impact,sources}[S2.screen]();
+ return `<div class="staff"><nav class="side" aria-label="Planner"><div class="logo"><i></i>Teduh</div>
+ ${NAV.map(([k,l])=>`<button class="navb" data-nav="${k}" aria-current="${S2.screen===k}">${l}${k==="reports"?`<span class="cnt ${nf?"":"soft"}">${openReports().length}</span>`:""}</button>`).join("")}
+ <div class="foot">Township planning team</div></nav>
+ <div class="mainwrap"><div class="topbar"><select data-township aria-label="Township"><option>Elmina City Centre</option><option>Bandar Bukit Raja</option><option>Kulai (plan check)</option></select>
+  <span class="note">34°C today · MET Malaysia: no alert</span><span class="sp"></span>
+  <button class="iconbtn" data-bell aria-label="New reports">🔔${nf?`<span class="cnt">${nf}</span>`:""}</button><button class="avatar" data-avatar aria-label="Account">TP</button>
+  ${S2.bell?`<div class="dropdown"><h4 style="padding:4px 10px">New resident reports</h4>${nf?fresh().map(r=>`<button class="dditem" data-report="${r.id}">${ic(r.kind)}<span><b>${esc(byId[r.sid].name)}</b><br><span class="note">${esc(r.note||KIND[r.kind].l)} · ${r.age}</span></span></button>`).join(""):`<p class="note" style="padding:6px 10px">No new reports.</p>`}<button class="btn ghost sm" data-nav="reports" style="margin:4px 10px 6px">Open inbox</button></div>`:""}
+  ${S2.avatar?`<div class="dropdown" style="right:22px;width:240px"><p style="padding:6px 10px"><b>Township planning team</b><br><span class="note">Elmina City Centre</span></p><button class="dditem" data-nav="sources">Data and sources</button><button class="dditem" data-act="signout">Sign out</button></div>`:""}
+ </div><div class="main">${scr}</div></div>
+ ${S2.drawer?`<div class="scrim" data-close></div>${drawerHTML()}`:""}</div>`;}
+
+function overview(){const pl=st.reports.filter(r=>r.status==="Planned").length,bu=st.reports.filter(r=>r.status==="Built").length;
+ return `<div class="mh"><div><h2>Elmina City Centre</h2><p>Walking heat and safety, updated 2:00 pm</p></div><button class="btn ghost sm" data-nav="map">Open full map</button></div>
+ <div class="kpis"><button class="kpi" data-nav="map"><b>${shadedPct()}%</b><span>walking routes shaded at 2pm</span></button><button class="kpi" data-nav="map"><b>${redCount()}</b><span>red streets at 2pm</span></button><button class="kpi" data-nav="reports"><b>${openReports().length}</b><span>open resident reports${fresh().length?` · <b style="display:inline;font-size:12px;color:var(--hot)">${fresh().length} new</b>`:""}</span></button><button class="kpi" data-nav="plan"><b>${pl} / ${bu}</b><span>fixes planned / built</span></button></div>
+ <div class="grid2"><div class="box"><h3>Streets at 2pm</h3>${mapSVG({mode:"day",hour:14,attr:"data-street"})}<span class="note">Tap a street for details. Circles show how many residents are asking.</span></div>
+ <div class="box"><div class="mh"><h3>Best-value fixes</h3><button class="btn ghost sm" data-nav="plan">Fix plan</button></div>
+ ${FIXES.slice(0,5).map(s=>`<button class="rowbtn" data-street="${s.id}"><span><b>${esc(s.name)}</b><small>${esc(s.fix.label)} · ${rm(s.fix.cost)}</small></span><span class="mono" style="color:var(--accent);font-weight:700">${Math.round(value(s))}</span></button>`).join("")}
+ <span class="note">Walks a day helped per RM10k</span>
+ <h3 style="margin-top:6px">Latest reports</h3>${st.reports.slice(0,3).map(r=>`<button class="rowbtn" data-report="${r.id}"><span style="display:flex;gap:8px;align-items:center">${ic(r.kind)}<span><b>${esc(byId[r.sid].name)}</b><small>${r.age} · ${r.metoo} × Me too</small></span></span>${r.fresh?`<span class="pill new">New</span>`:pill(r.status)}</button>`).join("")}</div></div>`;}
+
+function mapScreen(){const L=st.staff.layers;
+ return `<div class="mh"><div><h2>Map</h2><p>${st.mode==="day"?"Many walkers in the sun with no safe crossing":"Many walkers in the dark with no lit crossing"} = red</p></div><span class="note">Low<span class="ramp"></span>High</span></div>
+ <div class="controls"><div class="seg" role="group" aria-label="Mode"><button data-mode="day" aria-pressed="${st.mode==="day"}">Day</button><button data-mode="night" aria-pressed="${st.mode==="night"}">Night</button></div>
+ <label class="slider"><span class="big">${fmtH(st.hour)}</span><input type="range" data-hour min="${st.mode==="day"?8:19}" max="${st.mode==="day"?19:23}" value="${st.hour}" aria-label="Hour"></label>
+ <button class="chk" data-layer="reports" aria-pressed="${L.reports}">Reports</button><button class="chk" data-layer="fixes" aria-pressed="${L.fixes}">Fixes</button></div>
+ <div class="box" style="padding:8px">${mapSVG({attr:"data-street",sel:st.staff.drawer&&st.staff.drawer.type==="street"?st.staff.drawer.id:null,showReports:L.reports,showFixes:L.fixes})}</div>`;}
+
+function plan(){const pick=planSet();let c=0,wk=0,m=0;pick.forEach(id=>{const s=byId[id];c+=s.fix.cost;wk+=daily(s);m+=gain(s);});const over=c>st.budget;
+ return `<div class="mh"><div><h2>Fix plan</h2><p>Best value first: walks helped per RM10k. Tick or untick to adjust.</p></div><div class="btns"><button class="btn ghost sm" data-act="autoplan">Reset to best value</button><button class="btn ghost sm" data-act="export">Export CSV</button><button class="btn sm" data-act="council">Send to council</button></div></div>
+ <div class="controls"><label class="slider"><span class="big">${rm(st.budget)}</span><input type="range" data-budget min="50000" max="600000" step="10000" value="${st.budget}" aria-label="Budget"></label><span class="note">budget this year</span></div>
+ <div class="tw"><table><thead><tr><th></th><th>Street</th><th>Fix</th><th class="num">Cost</th><th class="num">Walks/day</th><th class="num">Value</th><th>Status</th></tr></thead><tbody>
+ ${FIXES.map(s=>{const on=pick.has(s.id);const r=st.reports.find(x=>x.sid===s.id);return `<tr class="${on?"":"out"}"><td><button class="tick ${on?"on":""}" data-toggle="${s.id}" aria-label="Include ${esc(s.name)}" aria-pressed="${on}">${on?"✓":""}</button></td><td><button class="rowbtn" data-street="${s.id}" style="border:0;padding:0"><span><b>${esc(s.name)}</b><small>${s.fix.mode==="night"?"Night fix":"Day fix"}</small></span></button></td><td>${esc(s.fix.label)}</td><td class="num">${rm(s.fix.cost)}</td><td class="num">${daily(s).toLocaleString()}</td><td class="num">${Math.round(value(s))}</td><td>${isBuilt(s)?pill("Built"):on?pill("Planned"):`<span class="note">Not in plan</span>`}</td></tr>`;}).join("")}
+ </tbody></table></div>
+ <div class="kpis"><div class="kpi"><b>${pick.size}</b><span>fixes in plan</span></div><div class="kpi"><b style="color:${over?"var(--hot)":"inherit"}">${rm(c)}</b><span>${over?"over budget":"total cost"}</span></div><div class="kpi"><b>${wk.toLocaleString()}</b><span>walks a day helped</span></div><div class="kpi"><b>${m.toLocaleString()} m</b><span>shaded or lit</span></div></div>
+ <p class="compare">One footbridge costs about <b>RM1–2m</b>. This plan helps ${wk.toLocaleString()} walks a day for ${rm(c)}.</p>`;}
+
+function reports(){const f=st.staff.filter;const list=st.reports.filter(r=>f==="All"||r.status===f).sort((a,b)=>(b.fresh?1:0)-(a.fresh?1:0)||b.metoo-a.metoo);
+ return `<div class="mh"><div><h2>Reports</h2><p>From the owner app's "My street" tab and QR stickers. Residents see every status change.</p></div></div>
+ <div class="tabsf">${["All",...STATUSES].map(x=>`<button data-filter="${x}" aria-pressed="${f===x}">${x} <span class="mono">${x==="All"?st.reports.length:st.reports.filter(r=>r.status===x).length}</span></button>`).join("")}</div>
+ <div class="tw"><table><thead><tr><th>ID</th><th>Street</th><th>Problem</th><th class="num">Me too</th><th>Source</th><th>When</th><th>Status</th></tr></thead><tbody>
+ ${list.length?list.map(r=>`<tr class="click" data-report="${r.id}"><td class="mono">${r.id}</td><td><b>${esc(byId[r.sid].name)}</b><br><span class="note">"${esc(r.note||KIND[r.kind].l)}"</span></td><td><span style="display:inline-flex;gap:6px;align-items:center">${ic(r.kind)}${KIND[r.kind].l}</span></td><td class="num">${r.metoo}</td><td>${esc(r.src)}</td><td>${r.age}</td><td>${r.fresh?`<span class="pill new">New</span> `:""}${pill(r.status)}</td></tr>`).join(""):`<tr><td colspan="7" class="note">No reports with this status.</td></tr>`}
+ </tbody></table></div>`;}
+
+function impact(){const nextYear=st.staff.period==="next";const pick=nextYear?planSet(st.budget+200000,false):planSet();let wk=0,c=0;pick.forEach(id=>{wk+=daily(byId[id]);c+=byId[id].fix.cost;});const closed=st.reports.filter(r=>r.status==="Built").length;
+ return `<div class="mh"><div><h2>Impact</h2><p>If the ${nextYear?"next two years'":"this year's"} plan (${rm(c)}) is built</p></div><div class="btns"><div class="seg"><button data-period="this" aria-pressed="${!nextYear}">This year</button><button data-period="next" aria-pressed="${nextYear}">+ next year</button></div><button class="btn ghost sm" data-act="summary">Copy summary</button></div></div>
+ <div class="ba"><div><small>Walking routes shaded at 2pm</small><b>${shadedPct()}%</b> → <b style="color:var(--accent)">${shadedPct(pick)}%</b></div><div><small>Red streets at 2pm</small><b>${redCount()}</b> → <b style="color:var(--accent)">${redCount(pick)}</b></div><div><small>Walks a day on fixed streets</small><b style="color:var(--accent)">${wk.toLocaleString()}</b></div><div><small>Resident reports closed</small><b>${closed}</b> of <b>${st.reports.length}</b></div></div>
+ <div class="box"><h3>Shade at 2pm, after the plan</h3>${mapSVG({mode:"day",hour:14,attr:"data-street",showReports:false,override:Object.fromEntries([...pick].map(id=>[id,col(score(byId[id],"day",14,pick))]))})}</div>
+ <div class="pillars"><div class="pillar"><b>Climate Resilience</b>Heat on walking routes, measured street by street.</div><div class="pillar"><b>Community Experience</b>${st.reports.length} resident reports, ${closed} closed, ${st.reports.reduce((a,r)=>a+r.metoo,0)} Me too votes.</div><div class="pillar"><b>Urban Biodiversity</b>Metres of route shaded by trees, not only trees planted.</div></div>
+ <button class="later" data-act="plancheck" style="text-align:left;background:transparent;width:100%"><b>Plan check:</b> run Teduh on a new township layout before building. Kulai, first launch 2028 →</button>`;}
+
+function sources(){return `<div class="mh"><div><h2>Data and sources</h2><p>Public or synthetic data only</p></div></div>
+ <div class="box"><ul class="srcs"><li><b>Streets, crossings, paths:</b> OpenStreetMap</li><li><b>Building heights:</b> Google Open Buildings 2.5D</li><li><b>Tree canopy:</b> Meta High-Resolution Canopy Height, checked with field photos</li><li><b>Shade by hour:</b> sun position plus buildings and trees</li><li><b>Walkers:</b> street-network estimate with WorldPop homes and destinations, calibrated by field counts</li><li><b>Weather:</b> data.gov.my MET Malaysia API; Education Ministry 35°C advisory</li><li><b>Fix effects:</b> US FHWA proven safety countermeasures</li><li><b>Costs:</b> public ranges; local quotes needed</li></ul>
+ <p class="note">Score = walkers × sun (or darkness) × who walks × missing crossing, compared with the worst street in the area. All values in this demo are synthetic.</p></div>`;}
+
+function drawerHTML(){const d=st.staff.drawer;
+ if(d.type==="street"){const s=byId[d.id];const R=S.map(x=>({x,sc:score(x)})).sort((a,b)=>b.sc-a.sc);const pos=R.findIndex(r=>r.x.id===s.id)+1,sc=R[pos-1].sc,h=st.hour,night=st.mode==="night";const w=walkers(s,h);const sun=night?v(s,"dark"):1-shade(s,h);const reps=st.reports.filter(r=>r.sid===s.id);const inPlan=planSet().has(s.id);
+  return `<aside class="drawer" aria-label="Street detail"><div class="dhead"><div><span class="rank" style="background:${col(sc)}">#${pos} of ${S.length}</span> <span class="note">${fmtH(h)}, ${night?"night":"day"}</span></div><button class="x" data-close aria-label="Close">×</button></div>
+  <div class="dbody"><div class="sname">${esc(s.name)}</div>
+  <div class="bars">${bar("Walkers",Math.min(1,w/120),"var(--accent)",Math.round(w)+"/h")}${bar(night?"Darkness":"In the sun",sun,night?"var(--night)":"var(--hot)",Math.round(sun*100)+"%")}${bar("Who walks",s.vul,"var(--warm)",Math.round(s.vul*100)+"%")}${bar("Missing crossing",v(s,"gap"),"var(--brown)",Math.round(v(s,"gap")*100)+"%")}</div>
+  <p class="note">Mostly ${WHO[s.type]} · ${s.len} m long</p>${(night?s.whyN||s.why:s.why||s.whyN)?`<p class="reason">${esc(night?s.whyN||s.why:s.why||s.whyN)}</p>`:""}
+  <h3>Resident reports (${reps.length})</h3>${reps.length?reps.map(r=>`<button class="rowbtn" data-report="${r.id}"><span style="display:flex;gap:8px;align-items:center">${ic(r.kind)}<span><b>${KIND[r.kind].l}</b><small>${r.metoo} × Me too · ${r.age}</small></span></span>${pill(r.status)}</button>`).join(""):`<p class="note">No reports yet. Ranked from public data.</p>`}
+  ${s.fix?`<h3>Suggested fix</h3><p>${esc(s.fix.label)}</p><div class="kv"><div><b>${rm(s.fix.cost)}</b>rough cost</div><div><b>${daily(s).toLocaleString()}</b>walks a day</div><div><b>${gain(s)} m</b>${s.fix.eff.trees!=null?"shaded":"lit"}</div></div>
+  <div class="btns"><button class="btn" data-plan="${s.id}">${inPlan?"In plan ✓ (remove)":"Add to plan"}</button><button class="btn ghost" data-try="${s.id}">${st.tried.has(s.id)?"Undo preview":"Preview as built"}</button></div>`:`<p class="note">No fix suggested. This street is not a priority.</p>`}</div></aside>`;}
+ const r=repById(d.id);const s=byId[r.sid];const idx=STATUSES.indexOf(r.status);
+ return `<aside class="drawer" aria-label="Report"><div class="dhead"><div><b class="mono">${r.id}</b> ${pill(r.status)}</div><button class="x" data-close aria-label="Close">×</button></div>
+ <div class="dbody"><div style="display:flex;gap:10px;align-items:center">${ic(r.kind)}<div><b>${KIND[r.kind].l}</b><br><span class="note">${esc(s.name)} · ${r.age} · ${esc(r.src)}</span></div></div>
+ ${r.photo?`<div class="photo"><img src="${r.photo}" alt="Resident photo"></div>`:placeholderPhoto(r.kind)}
+ <p>"${esc(r.note||"No note")}"</p><p class="note">${r.metoo} neighbour${r.metoo===1?"":"s"} tapped Me too</p>
+ <h3>Status</h3><div class="stepper">${STATUSES.map((x,i)=>`<button data-setstatus="${x}" class="${i<idx?"done":""}" aria-pressed="${i===idx}">${x}</button>`).join("")}</div>
+ <h3>Reply to resident</h3><textarea data-replytext placeholder="e.g. Thanks, we've added this to next month's plan.">${esc(st.staff.replyDraft||"")}</textarea><div class="btns"><button class="btn" data-act="reply">Send reply</button><button class="btn ghost" data-street="${s.id}">Open street</button></div>
+ ${r.replies.length?`<h3>History</h3><ul class="hist">${r.replies.map(x=>`<li>${esc(x.t)}<small>${esc(x.who)} · ${esc(x.when)}</small></li>`).join("")}</ul>`:""}</div></aside>`;}
+
+/* ---------- phone ---------- */
+const status=(t="2:00")=>`<div class="island"></div><div class="status"><span>${t}</span><span>5G ▮▮▮</span></div>`;
+const pbar=(t,s)=>`<div class="pbar"><button class="back" data-pback aria-label="Back">‹</button><div><span class="t">${t}</span><span class="s">${s}</span></div></div>`;
+function pnav(on){const u=st.notifs.filter(n=>n.unread).length;return `<div class="pnav">${[["host","Home"],["home","My street"],["inbox","Inbox"]].map(([k,l])=>`<button data-pgo="${k}" aria-current="${on===k}"><i></i>${l}${k==="inbox"&&u?`<span class="cnt">${u}</span>`:""}</button>`).join("")}</div>`;}
+function phoneHTML(){const p=st.phone;let h;
+ if(p.qr)h=webScreen();else h=({host,home:phome,kind:pkind,pin:ppin,sent:psent,mine:pmine,track:ptrack,fixed:pfixed,inbox:pinbox})[p.screen]();
+ const b=p.banner&&!p.qr?`<button class="banner" data-ptrack="${p.banner.rid}"><b>${esc(p.banner.title)}</b>${esc(p.banner.body)}</button>`:"";
+ return `<div class="phone"><div class="scr">${b}${h}</div></div>`;}
+function host(){return `${status("9:41")}<div class="pbody"><div class="hosthead"><small>Owner app · Good afternoon</small><b>Aina</b><div class="unit"><span>Elmina Valley 5, No. 12</span><span class="pill st-Built">Keys received</span></div></div>
+ <div class="tiles">${["Billing","Construction progress","Defects","Documents","Household"].map(t=>`<button class="tile" data-ptoast="${t}"><i></i>${t}</button>`).join("")}<button class="tile teduh" data-pgo="home"><span class="badge">NEW</span><i></i>My street</button></div>
+ <button class="card" data-pgo="inbox"><h4>My street: ${st.notifs.filter(n=>n.unread).length} updates</h4><p class="sm-t">${esc(st.notifs[0].title)}</p></button>
+ <button class="card" data-ptoast="Defects"><h4>Defect #4471</h4><p class="sm-t">Kitchen tile · fixed 3 Oct</p></button></div>${pnav("host")}`;}
+function phome(){const p=st.phone;const mine=st.reports.filter(r=>r.mine).length;const sheet=p.sheet?byId[p.sheet]:null;
+ return `${status()}${pbar("My street","Elmina City Centre")}<div class="pbody">
+ <button class="heat" data-pgo="inbox"><div><span>Today in Shah Alam</span><b>34°C</b><span>Hottest 1–4pm · MET Malaysia</span></div><span style="text-align:right">Tomorrow<br><b style="font-size:20px;display:inline">36°C</b></span></button>
+ ${mapSVG({mode:"day",hour:14,attr:"data-pstreet",home:true,cls:"mm",onlyMine:true})}
+ <div class="legend"><span>Streets now · tap one</span><span>shady<span class="ramp" style="width:60px"></span>sun</span></div>
+ ${sheet?`<div class="sheet"><div class="cardrow"><b>${esc(sheet.name)}</b><button class="x" data-psheet="" aria-label="Close" style="width:28px;height:28px">×</button></div><span class="sm-t">${Math.round((1-shade(sheet,14))*100)}% in sun at 2pm · ${st.reports.filter(r=>r.sid===sheet.id).reduce((a,r)=>a+r.metoo+1,0)} reports</span><button class="cta" data-preport="${sheet.id}" style="padding:10px">Report a problem here</button></div>`:""}
+ <button class="cta" data-pgo="kind">Report a street problem</button>
+ <button class="card" data-pgo="mine"><div class="cardrow"><div><h4>My reports</h4><p class="sm-t">${mine} sent · ${st.reports.filter(r=>r.follow).length} followed</p></div><span>›</span></div></button>
+ <h4>Being fixed near you</h4>
+ ${st.reports.filter(r=>r.follow||r.mine).filter(r=>r.status==="Planned"||r.status==="Built").map(r=>`<button class="card" data-${r.status==="Built"?"pfixed":"ptrack"}="${r.status==="Built"?r.sid:r.id}"><div class="cardrow"><div><h4>${esc(byId[r.sid].name)}</h4><p class="sm-t">${esc(byId[r.sid].fix?byId[r.sid].fix.label:KIND[r.kind].l)}</p></div>${pill(r.status)}</div></button>`).join("")||`<p class="sm-t">Nothing planned near you yet.</p>`}
+ </div>${pnav("home")}`;}
+function pkind(){return `${status()}${pbar("Report a street","Step 1 of 3 · What's the problem?")}<div class="pbody">
+ ${Object.entries(KIND).map(([k,o])=>`<button class="opt" data-pkind="${k}"><span class="sw" style="background:${o.c}">${o.g}</span><span>${o.l}<small>${o.d}</small></span></button>`).join("")}
+ <p class="sm-t" style="margin-top:auto">Your report goes to the township team. Neighbours don't see your name.</p></div>`;}
+function ppin(){const d=st.phone.draft;const existing=d.sid?st.reports.filter(r=>r.sid===d.sid&&r.status!=="Built"):[];const n=existing.reduce((a,r)=>a+r.metoo+1,0);
+ return `${status()}${pbar("Report a street","Step 2 of 3 · Where and what")}<div class="pbody">
+ ${mapSVG({mode:"day",hour:14,attr:"data-pick",colour:false,showReports:false,showFixes:false,home:true,cls:"mm",pin:d.x!=null?{x:d.x,y:d.y,kind:d.kind}:null})}
+ <p style="font-size:13px">${d.sid?`<b>${esc(byId[d.sid].name)}</b> · ${KIND[d.kind].l}`:"Tap the street on the map"}</p>
+ ${n?`<div class="metoo"><span><b>${n} neighbours</b> already reported this street.</span><button data-pmetoo>Me too</button></div>`:""}
+ <label class="upl">${d.photo?`<img class="thumb" src="${d.photo}" alt="Your photo">`:""}<span>${d.photo?"Change photo":"Add a photo"}</span><span class="note">optional</span><input type="file" accept="image/*" data-pphoto></label>
+ <textarea data-pnote placeholder="Add a note (optional)" rows="2">${esc(d.note||"")}</textarea>
+ <button class="cta" data-psend ${d.sid?"":"disabled"}>Send report</button></div>`;}
+function psent(){const r=repById(st.phone.rid);return `${status()}<div class="pbody" style="justify-content:center;text-align:center;gap:16px">
+ <div style="width:72px;height:72px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-size:34px;font-weight:800;margin:0 auto">✓</div>
+ <h2>${r.mine&&!st.phone.metoo?"Report sent":"Added your voice"}</h2><p class="sm-t">${esc(byId[r.sid].name)} · ${r.metoo+1} resident${r.metoo?"s":""} now asking. The township team will see it on their map.</p>
+ <button class="cta" data-ptrack="${r.id}">Track this report</button><button class="cta ghost" data-pgo="home">Back to My street</button></div>`;}
+function pmine(){const list=st.reports.filter(r=>r.mine||r.follow);return `${status()}${pbar("My reports","Sent and followed")}<div class="pbody">
+ ${list.map(r=>`<button class="card" data-ptrack="${r.id}"><div class="cardrow"><div style="display:flex;gap:10px;align-items:center">${ic(r.kind)}<div><h4>${esc(byId[r.sid].name)}</h4><p class="sm-t">${r.mine?"You reported":"You followed"} · ${r.age}</p></div></div>${pill(r.status)}</div></button>`).join("")}
+ <button class="cta" data-pgo="kind" style="margin-top:auto">Report another problem</button></div>`;}
+function ptrack(){const r=repById(st.phone.rid);const idx=STATUSES.indexOf(r.status);const sub=["Today","Usually within a week","Added to the fix plan with a cost","You get a before and after"];
+ return `${status()}${pbar("Your report",esc(byId[r.sid].name))}<div class="pbody">
+ <div class="card" style="background:var(--surface-2)"><div style="display:flex;gap:10px;align-items:center">${ic(r.kind)}<div><h4>${KIND[r.kind].l}</h4><p class="sm-t">${r.metoo+1} resident${r.metoo?"s":""} asking · ${esc(r.id)}</p></div></div>${r.photo?`<img src="${r.photo}" alt="Your photo" style="width:100%;border-radius:10px;margin-top:8px;max-height:140px;object-fit:cover">`:""}</div>
+ <ol class="psteps">${STATUSES.map((x,i)=>`<li><span class="dot ${i<=idx?"done":i===idx+1?"now":""}">${i<=idx?"✓":i+1}</span><div><b>${x==="Seen"?"Seen by the township team":x}</b><span class="sm-t">${i<=idx&&i===0?r.age:sub[i]}</span></div></li>`).join("")}</ol>
+ ${r.replies.map(x=>`<div class="reply"><small>${esc(x.who)} · ${esc(x.when)}</small>${esc(x.t)}</div>`).join("")}
+ ${r.status==="Built"?`<button class="cta" data-pfixed="${r.sid}">See the before and after</button>`:""}
+ <button class="cta ghost" data-pgo="home" style="margin-top:auto">Back to My street</button></div>`;}
+function pfixed(){const sid=st.phone.fixSid;const s=byId[sid];const night=s.fix&&s.fix.mode==="night";const r=st.reports.find(x=>x.sid===sid);const vb=(()=>{const xs=s.pts.map(p=>p[0]),ys=s.pts.map(p=>p[1]);const cx=(Math.min(...xs)+Math.max(...xs))/2,cy=(Math.min(...ys)+Math.max(...ys))/2;const w=Math.max(170,Math.max(...xs)-Math.min(...xs)+60,Math.max(...ys)-Math.min(...ys)+60);return `${Math.max(0,cx-w/2)} ${Math.max(0,cy-w/2)} ${w} ${w}`;})();
+ const rk=r?r.kind:"hot";const nightK=night||(!s.fix&&rk==="dark");const before=Math.round((nightK?s.dark:1-Math.min(.95,s.trees+s.bldg*.2))*100);const after=s.fix?Math.round((night?s.fix.eff.dark:1-Math.min(.95,(s.fix.eff.trees??s.trees)+s.bldg*.2))*100):Math.min(before,rk==="dark"?15:20);
+ const builtLabel=s.fix?s.fix.label:{hot:"Shade trees and shade sails",cross:"Raised zebra crossing with solar studs",dark:"Adaptive solar streetlights",broken:"Pavement repaired and levelled"}[rk];
+ return `${status()}${pbar("Fixed near you",esc(s.name))}<div class="pbody">
+ <div class="bafig"><figure>${mapSVG({mode:night?"night":"day",hour:night?20:14,vb,override:{[sid]:"#d2412a"},showReports:false,showFixes:false,cls:"mm"})}<figcaption>Before</figcaption></figure><figure>${mapSVG({mode:night?"night":"day",hour:night?20:14,vb,override:{[sid]:"#2e9d6c"},showReports:false,showFixes:false,cls:"mm"})}<figcaption>After</figcaption></figure></div>
+ <div class="stats"><div><b>${after}%</b>${nightK?"dark":"in sun"} (was ${before}%)</div><div><b>${daily(s).toLocaleString()}</b>walks a day</div><div><b>${r?r.metoo+1:0}</b>residents asked</div></div>
+ <div class="card"><h4>What was built</h4><p class="sm-t">${esc(builtLabel)}</p></div>
+ <div class="card" style="background:var(--accent-soft);border-color:transparent"><h4>Your report helped</h4><p class="sm-t">Streets with more residents asking move up the township's fix list.</p></div>
+ <button class="cta ghost" data-pgo="home" style="margin-top:auto">Back to My street</button></div>`;}
+function pinbox(){return `${status()}${pbar("Inbox","My street updates")}<div class="pbody">
+ ${st.notifs.map(n=>`<button class="nitem ${n.unread?"unread":""}" data-pnotif="${n.id}"><span class="ic" style="background:${n.kind==="heat"?"var(--hot)":"var(--accent)"};width:30px;height:30px">${n.kind==="heat"?"☀":"✓"}</span><span><b>${esc(n.title)}</b><br><span class="sm-t">${esc(n.body)}</span><small>${esc(n.when)}</small></span></button>`).join("")}
+ </div>${pnav("inbox")}`;}
+function webScreen(){const w=st.phone.web;
+ if(w.sent)return `${status()}<div class="browser"><span>teduh.my/r/JS-01</span></div><div class="pbody" style="justify-content:center;text-align:center;gap:14px"><div style="width:64px;height:64px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-size:30px;font-weight:800;margin:0 auto">✓</div><h2>Thank you</h2><p class="sm-t">Your report for the bus stop on Jalan Sekolah went to the township team.</p><button class="cta" data-wagain>Report something else</button></div>`;
+ return `${status()}<div class="browser"><span>teduh.my/r/JS-01</span></div><div class="pbody">
+ <div class="card" style="background:var(--surface-2)"><p class="sm-t">You scanned the sticker at</p><h4>Bus stop, Jalan Sekolah</h4><p class="sm-t">No app or login needed</p></div>
+ <h4>What's the problem here?</h4><div class="chips">${Object.entries(KIND).map(([k,o])=>`<button class="chip" data-wkind="${k}" aria-pressed="${w.kind===k}"><span class="sw" style="background:${o.c}">${o.g}</span>${o.l}</button>`).join("")}</div>
+ <label class="upl">${w.photo?`<img class="thumb" src="${w.photo}" alt="Your photo">`:""}<span>${w.photo?"Change photo":"Add a photo"}</span><span class="note">optional</span><input type="file" accept="image/*" data-wphoto></label>
+ <textarea data-wnote placeholder="Phone number for updates (optional)" rows="1">${esc(w.note||"")}</textarea>
+ <button class="cta" data-wsend ${w.kind?"":"disabled"} style="margin-top:auto">Send</button></div>`;}
+
+/* ---------- render ---------- */
+const root=document.getElementById("root");
+function render(){
+ const keep=document.activeElement;const key=keep&&keep.dataset?Object.keys(keep.dataset)[0]:null;const selStart=keep&&keep.selectionStart;
+ const sw=`<div class="switch" role="group" aria-label="View">${[["staff","Sime Darby"],["resident","Resident"],["split","Side by side"]].map(([k,l])=>`<button data-view="${k}" aria-pressed="${st.view===k&&!(k==="resident"&&st.phone.qr)}">${l}</button>`).join("")}<button data-view="qr" aria-pressed="${st.view!=="staff"&&st.phone.qr}">QR</button><span class="sep"></span><button data-reset>Reset</button><span class="sep"></span><a href="sdp-app.html" style="display:inline-flex;align-items:center;padding:6px 10px;border-radius:8px;font-size:12.5px;font-weight:700;color:var(--accent);text-decoration:none;white-space:nowrap">SDP app concept ↗</a></div>`;
+ let body;
+ if(st.view==="staff")body=staffHTML();
+ else if(st.view==="resident")body=`<div class="stage">${phoneHTML()}</div>`;
+ else body=`<div class="split">${staffHTML()}<div class="stage">${phoneHTML()}</div></div>`;
+ const m=st.modal?`<div class="modalwrap" data-mclose><div class="modal" role="dialog" aria-modal="true" aria-label="${esc(st.modal.title)}"><h3>${esc(st.modal.title)}</h3>${st.modal.body||""}${st.modal.copy!=null?`<textarea readonly data-copytext>${esc(st.modal.copy)}</textarea>`:""}<div class="btns" style="justify-content:flex-end">${st.modal.copy!=null?`<button class="btn" data-copy>Copy</button>`:""}${st.modal.confirm?`<button class="btn" data-confirm>${esc(st.modal.confirm)}</button>`:""}<button class="btn ghost" data-mx>Close</button></div></div></div>`:"";
+ root.innerHTML=sw+body+m+(st.toast?`<div class="toast" role="status">${esc(st.toast)}</div>`:"");
+ if(key&&["hour","budget","replytext","pnote","wnote"].includes(key)){const n=root.querySelector(`[data-${key}]`);if(n){n.focus();try{if(selStart!=null&&n.setSelectionRange)n.setSelectionRange(selStart,selStart);}catch(e){}}}
+}
+
+/* ---------- events ---------- */
+function openStreet(id){st.staff.drawer={type:"street",id};st.staff.bell=false;}
+function openReport(id){const r=repById(id);r.fresh=false;st.staff.drawer={type:"report",id};st.staff.replyDraft="";st.staff.bell=false;}
+function pgo(s){const p=st.phone;if(s===p.screen)return;p.hist.push(p.screen);p.screen=s;p.sheet=null;}
+function readFile(input,cb){const f=input.files&&input.files[0];if(!f)return;if(f.size>8e6){toast("Photo is too large. Pick one under 8 MB.");render();return;}const fr=new FileReader();fr.onload=()=>cb(fr.result);fr.readAsDataURL(f);}
+
+document.addEventListener("click",e=>{
+ const t=e.target;
+ const pick=t.closest&&t.closest("svg[data-pick]");
+ if(pick){const pt=pick.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;const q=pt.matrixTransform(pick.getScreenCTM().inverse());const n=nearest(q.x,q.y);Object.assign(st.phone.draft,{sid:n.sid,x:n.x,y:n.y});render();return;}
+ const el=t.closest&&t.closest("[data-view],[data-reset],[data-nav],[data-bell],[data-avatar],[data-street],[data-report],[data-close],[data-mode],[data-layer],[data-toggle],[data-filter],[data-setstatus],[data-plan],[data-try],[data-period],[data-act],[data-mx],[data-mclose],[data-copy],[data-confirm],[data-pgo],[data-pback],[data-ptoast],[data-pstreet],[data-psheet],[data-preport],[data-pkind],[data-pmetoo],[data-psend],[data-ptrack],[data-pfixed],[data-pnotif],[data-wkind],[data-wsend],[data-wagain]");
+ if(!el)return;const d=el.dataset;
+ if(d.mclose!==undefined&&el!==t)return; // clicks inside the modal box
+ if(d.view){if(d.view==="qr"){st.phone.qr=true;if(st.view==="staff")st.view="split";}else{st.view=d.view;if(d.view!=="staff")st.phone.qr=false;}render();return;}
+ if(d.reset!==undefined){st=seed();toast("Demo reset");render();return;}
+ /* staff */
+ if(d.nav){st.staff.screen=d.nav;st.staff.drawer=null;st.staff.bell=false;st.staff.avatar=false;render();return;}
+ if(d.bell!==undefined){st.staff.bell=!st.staff.bell;st.staff.avatar=false;render();return;}
+ if(d.avatar!==undefined){st.staff.avatar=!st.staff.avatar;st.staff.bell=false;render();return;}
+ if(d.street){openStreet(d.street);render();return;}
+ if(d.report){openReport(d.report);render();return;}
+ if(d.close!==undefined){st.staff.drawer=null;render();return;}
+ if(d.mode){st.mode=d.mode;st.hour=d.mode==="day"?14:20;render();return;}
+ if(d.layer){st.staff.layers[d.layer]=!st.staff.layers[d.layer];render();return;}
+ if(d.toggle){const on=planSet().has(d.toggle);st.manual[d.toggle]=!on;render();return;}
+ if(d.filter){st.staff.filter=d.filter;render();return;}
+ if(d.period){st.staff.period=d.period;render();return;}
+ if(d.plan){const on=planSet().has(d.plan);st.manual[d.plan]=!on;toast(on?"Removed from the fix plan":"Added to the fix plan");render();return;}
+ if(d.try){st.tried.has(d.try)?st.tried.delete(d.try):st.tried.add(d.try);render();return;}
+ if(d.setstatus){const r=repById(st.staff.drawer.id);if(r.status!==d.setstatus){r.status=d.setstatus;r.replies.push({who:"Township team",t:`Status changed to ${d.setstatus}.`,when:"just now"});
+   const s=byId[r.sid];notifyResident(r,`${s.name} is now ${d.setstatus}`,d.setstatus==="Built"?"The fix is built. See the before and after.":d.setstatus==="Planned"?(s.fix?s.fix.label:"Added to the fix plan."):"The township team has seen your report.");
+   if(d.setstatus==="Planned"&&s.fix)st.manual[s.id]=true;toast(r.mine||r.follow?"Status updated · resident notified":"Status updated");}render();return;}
+ if(d.act){const a=d.act;
+  if(a==="reply"){const r=repById(st.staff.drawer.id);const txt=(st.staff.replyDraft||"").trim();if(!txt){toast("Write a reply first");render();return;}r.replies.push({who:"Township team",t:txt,when:"just now"});st.staff.replyDraft="";notifyResident(r,`Reply about ${byId[r.sid].name}`,txt);toast(r.mine||r.follow?"Reply sent · resident notified":"Reply sent");render();return;}
+  if(a==="export"){const pick=planSet();st.modal={title:"Export fix plan (CSV)",copy:"street,fix,cost_rm,walks_per_day,value_per_rm10k\n"+FIXES.filter(s=>pick.has(s.id)).map(s=>[`"${s.name}"`,`"${s.fix.label}"`,s.fix.cost,daily(s),Math.round(value(s))].join(",")).join("\n")};render();return;}
+  if(a==="council"){const pick=planSet();let c=0;pick.forEach(id=>c+=byId[id].fix.cost);st.modal={title:"Send fix plan to the council",body:`<p>Send ${pick.size} fixes (${rm(c)}) to <b>Majlis Bandaraya Shah Alam</b> for road and crossing approval?</p>`,confirm:"Send"};render();return;}
+  if(a==="summary"){const pick=planSet();let wk=0;pick.forEach(id=>wk+=daily(byId[id]));st.modal={title:"Impact summary",copy:`Elmina City Centre walking heat (Teduh)\nWalking routes shaded at 2pm: ${shadedPct()}% -> ${shadedPct(pick)}% after plan\nRed streets at 2pm: ${redCount()} -> ${redCount(pick)}\nWalks a day on fixed streets: ${wk}\nResident reports: ${st.reports.length}, closed: ${st.reports.filter(r=>r.status==="Built").length}`};render();return;}
+  if(a==="autoplan"){st.manual={};toast("Plan reset to best value within budget");render();return;}
+  if(a==="plancheck"){st.modal={title:"Plan check: Kulai",body:`<p>Upload a township layout (DWG, GeoJSON or PDF plan) and Teduh scores the future streets for shade and crossings before construction.</p><p class="note">Coming after the pilot.</p>`};render();return;}
+  if(a==="signout"){st.staff.avatar=false;toast("Signed out (demo)");render();return;}
+ }
+ if(d.mx!==undefined||d.mclose!==undefined){st.modal=null;render();return;}
+ if(d.copy!==undefined){const txt=st.modal.copy;const ta=root.querySelector("[data-copytext]");const fallback=()=>{if(ta){ta.focus();ta.select();}toast("Selected. Press Ctrl or Cmd + C to copy");render();const n=root.querySelector("[data-copytext]");if(n){n.focus();n.select();}};
+  try{navigator.clipboard.writeText(txt).then(()=>{toast("Copied");render();},fallback);}catch(err){fallback();}return;}
+ if(d.confirm!==undefined){st.modal=null;toast("Sent to Majlis Bandaraya Shah Alam");render();return;}
+ /* phone */
+ const p=st.phone;
+ if(d.pgo){if(d.pgo==="kind")p.draft=null;pgo(d.pgo);render();return;}
+ if(d.pback!==undefined){p.screen=p.hist.pop()||"host";p.sheet=null;render();return;}
+ if(d.ptoast){toast(`${d.ptoast} is an existing owner-app feature`);render();return;}
+ if(d.pstreet){p.sheet=d.pstreet;render();return;}
+ if(d.psheet!==undefined){p.sheet=null;render();return;}
+ if(d.preport){const s=byId[d.preport];const [x,y]=mid(s);p.draft={kind:null,sid:s.id,x,y,photo:null,note:""};pgo("kind");render();return;}
+ if(d.pkind){if(!p.draft)p.draft={kind:null,sid:null,x:null,y:null,photo:null,note:""};p.draft.kind=d.pkind;pgo("pin");render();return;}
+ if(d.pmetoo!==undefined){const ex=st.reports.filter(r=>r.sid===p.draft.sid&&r.status!=="Built").sort((a,b)=>b.metoo-a.metoo)[0];ex.metoo++;ex.follow=true;p.rid=ex.id;p.metoo=true;p.hist=["host","home"];p.screen="sent";render();return;}
+ if(d.psend!==undefined){const dr=p.draft;const r={id:"R-"+(st.nextId++),sid:dr.sid,kind:dr.kind,metoo:0,age:"just now",status:"Received",note:dr.note||"",photo:dr.photo,src:"Owner app",mine:true,fresh:true,replies:[]};st.reports.unshift(r);p.rid=r.id;p.metoo=false;p.hist=["host","home"];p.screen="sent";toast("New report sent to the township team");render();return;}
+ if(d.ptrack){p.rid=d.ptrack;p.banner=null;st.notifs.forEach(n=>{if(n.rid===d.ptrack)n.unread=false;});if(p.qr)p.qr=false;pgo("track");render();return;}
+ if(d.pfixed){p.fixSid=d.pfixed;pgo("fixed");render();return;}
+ if(d.pnotif){const n=st.notifs.find(x=>x.id===+d.pnotif);n.unread=false;if(n.kind==="heat"){pgo("home");}else{const r=repById(n.rid);if(r.status==="Built"){p.fixSid=r.sid;pgo("fixed");}else{p.rid=r.id;pgo("track");}}render();return;}
+ if(d.wkind){p.web.kind=d.wkind;render();return;}
+ if(d.wsend!==undefined){const r={id:"R-"+(st.nextId++),sid:"s6",kind:p.web.kind,metoo:0,age:"just now",status:"Received",note:p.web.note||"Reported at the bus stop sticker",photo:p.web.photo,src:"QR sticker",fresh:true,replies:[]};st.reports.unshift(r);p.web.sent=true;toast("QR report sent to the township team");render();return;}
+ if(d.wagain!==undefined){p.web={kind:null,photo:null,sent:false};render();return;}
+});
+document.addEventListener("input",e=>{const t=e.target;if(!t.dataset)return;
+ if(t.dataset.hour!==undefined){st.hour=+t.value;render();}
+ else if(t.dataset.budget!==undefined){st.budget=+t.value;render();}
+ else if(t.dataset.replytext!==undefined){st.staff.replyDraft=t.value;}
+ else if(t.dataset.pnote!==undefined){st.phone.draft.note=t.value;}
+ else if(t.dataset.wnote!==undefined){st.phone.web.note=t.value;}
+});
+document.addEventListener("change",e=>{const t=e.target;if(!t.dataset)return;
+ if(t.dataset.pphoto!==undefined)readFile(t,u=>{st.phone.draft.photo=u;render();});
+ if(t.dataset.wphoto!==undefined)readFile(t,u=>{st.phone.web.photo=u;render();});
+ if(t.dataset.township!==undefined&&t.value!=="Elmina City Centre"){const v2=t.value;t.value="Elmina City Centre";st.modal={title:v2,body:v2.startsWith("Kulai")?`<p>Plan check scores a township layout before it is built. Upload a layout to start.</p><p class="note">Coming after the pilot.</p>`:`<p>${esc(v2)} is not set up in this demo yet. The same engine runs on any township in Malaysia.</p>`};render();}
+});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(st.modal)st.modal=null;else if(st.staff.drawer)st.staff.drawer=null;else{st.staff.bell=false;st.staff.avatar=false;}render();}});
+render();
+})();
+</script>
+
+</body>
+</html>
