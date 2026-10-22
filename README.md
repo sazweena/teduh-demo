@@ -1,58 +1,39 @@
-# Teduh
+# Teduh (Cool Routes)
 
-**Teduh shows Sime Darby which streets people walk in the heat or the dark without shade or a safe crossing, picks the best-value fix within a budget, and lets residents report what the map misses.**
+Team Simelarps, Township of Tomorrow (Planet), Sime Darby Property University Hackathon 2026.
 
-Concept prototype for the Sime Darby Property University Hackathon 2026 (Township of Tomorrow, Planet theme). All streets, numbers, reports and costs in this demo are synthetic.
+Teduh helps township planners inspect walking heat, compare fixes within a budget, and hear from residents. The [pitch script](source-ref/simelarps-teduh-pitch-script-2026-10-22.md) is the spoken reference for the presentation.
 
-## Live demo
+## Open the planning workspace
 
-- Teduh demo (planner website + resident phone): https://sazweena.github.io/teduh-demo/
-- Concept of Teduh inside the Sime Darby Property App: https://sazweena.github.io/teduh-demo/sdp-app.html (concept only, not an official Sime Darby app)
+- Planner and resident views: https://sazweena.github.io/teduh-demo/
+- Full Elmina street map: https://sazweena.github.io/teduh-demo/map.html
+- Resident report form: https://sazweena.github.io/teduh-demo/report.html
+- Proposed owner-app integration: https://sazweena.github.io/teduh-demo/sdp-app.html
 
-Use the bar at the bottom-left of the demo to switch between **Sime Darby**, **Resident**, **Side by side**, **QR** and **Reset**.
+Use *Reset pitch* to open the planner map and resident view side by side at noon. Move the FIND slider to 1:00 PM to see the highlighted planning route change to dark red. Its scenario priority becomes 0.81, with 120 walkers per hour, 95% sun exposure, and a 150 m crossing gap. In *Fix plan*, set RM300,000 to compare the selected fixes, total cost, and estimated trips helped. The resident phone flow can submit a scenario report and show the planner response.
 
-## 60-second demo path
+## Data and limits
 
-1. **Sime Darby** view: Overview, then Map. Drag the hour to 1pm; Jalan Elmina 3 turns red. Click it to see why.
-2. **Fix plan**: move the budget slider. The best-value fixes are ticked; compare with RM1–2m for one footbridge.
-3. **Side by side**: on the phone, My street → Report → pick a problem → tap a street → add a photo → Send. The bell on the Sime Darby side shows 1.
-4. Open the report from the bell, set it to **Planned** and reply. The phone gets the update.
-5. Set it to **Built**; the phone shows the before and after.
-6. Press **Reset** before the next run.
+The map uses an OpenStreetMap snapshot for actual Elmina street geometry. The colored planning route uses nearby mapped *Jalan Elmina Ilham 3* as a visual reference for the script's *Jalan Elmina 3*. Confirm the exact pilot route and walking access on site. Priority, shade, walkers, fix costs, and impact are scenario estimates, not field measurements.
+
+This GitHub Pages site has no backend. Reports and proposed map fixes entered in the separate map and report form are stored in the current browser so those pages can work together. They are not shared across devices and are not submitted to Sime Darby Property or a council. The resident phone flow inside `index.html` is also a local planning scenario. The separate private pilot can use a shared server and database.
 
 ## Files
 
-| File | What it is |
-|---|---|
-| `index.html` | The full clickable demo: planner website and resident phone, connected |
-| `sdp-app.html` | Concept: the "My Street" tile and flow inside the Sime Darby Property App look |
+| File | Purpose |
+| --- | --- |
+| `index.html` | Planner, budget engine, resident phone, and pitch reset |
+| `map.html`, `app.js`, `styles.css` | OSM street map, hourly FIND overlay, and proposed fixes |
+| `elmina-map.json` | OSM-derived Elmina geometry snapshot |
+| `report.html`, `report.js` | Coordinate-based resident report form |
+| `static-api.js` | Browser storage adapter for this static site |
+| `sdp-app.html` | Proposed owner-app integration view |
+| `vendor/` | Local Leaflet files and license |
+| `source-ref/` | Spoken pitch script reference |
 
-Everything is plain HTML, CSS and JavaScript in one file each. No build step.
+Serve the repository through a local HTTP server when testing. Opening the HTML files through `file://` prevents map data requests from loading. No build step is required.
 
-## How to edit (team)
+## Team workflow
 
-**In the browser (easiest):** open this repo on github.com and press the `.` key. A VS Code editor opens. Edit the file, then use the Source Control panel to commit to `main`. The live site updates in about a minute.
-
-**On your laptop:**
-
-```bash
-git clone https://github.com/sazweena/teduh-demo.git
-cd teduh-demo
-# open index.html in your browser to test
-git pull          # always pull before you start
-git add .
-git commit -m "Describe your change"
-git push
-```
-
-Tip: tell the group before editing the same file at the same time, to avoid merge conflicts.
-
-## Team
-
-- ________________
-- ________________
-- ________________
-
-## Data and assumptions
-
-The real tool would use public data only: OpenStreetMap, Google Open Buildings, Meta tree canopy, sun position, WorldPop and the data.gov.my MET Malaysia weather API, calibrated with field counts. Costs are rough public ranges. Under the hackathon terms, Sime Darby Property owns the IP.
+Pull the latest `main` before editing, test the changed screen and connected flow, then commit and push. Keep the page, script, and presentation values aligned. The site is published from this repository through GitHub Pages.

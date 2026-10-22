@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#102c27">
+  <title>Teduh | Elmina walking plan</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="./vendor/leaflet.css">
+  <link rel="stylesheet" href="./styles.css">
+  <script>const mapView = new URLSearchParams(location.search); if (mapView.has("embedded")) document.documentElement.classList.add("embedded"); if (mapView.has("compact")) document.documentElement.classList.add("compact");</script>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand"><span class="brand-icon" aria-hidden="true">✳</span><span>Teduh<small>Elmina walking plan</small></span></div>
+      <span class="source-tag">REAL OSM GEOMETRY <span aria-hidden="true">·</span> PILOT AREA</span>
+      <div class="top-actions"><button id="exportBtn" class="button secondary" type="button">Export plan</button><label class="button secondary import-button">Import plan<input id="importInput" type="file" accept=".geojson,.json,application/geo+json,application/json" hidden></label></div>
+    </header>
+    <main class="workspace">
+      <aside class="panel sidebar" aria-label="Planning controls">
+        <div class="intro"><p class="eyebrow">ELMINA CITY CENTRE</p><h1>Make the next walk better.</h1><p>Map real walking links, trace a route, then place a proposed fix at its actual coordinates.</p></div>
+        <section class="section" aria-labelledby="routeTitle">
+          <div class="section-head"><span class="step">01</span><h2 id="routeTitle">Trace a walk</h2></div>
+          <p>Choose a start and destination on the map. Teduh uses connected OpenStreetMap ways.</p>
+          <div class="control-row"><button id="routeTool" class="button primary" type="button" aria-pressed="false">Choose route points</button><button id="clearRoute" class="button text" type="button">Clear</button></div>
+          <div id="routeResult" class="route-result" aria-live="polite">Choose route points to inspect a real mapped walk.</div>
+        </section>
+        <section class="section" aria-labelledby="fixTitle">
+          <div class="section-head"><span class="step">02</span><h2 id="fixTitle">Add a proposed fix</h2></div>
+          <p>Select a fix, then click the map. Drag it to adjust the location.</p>
+          <div class="tool-grid" role="group" aria-label="Proposed fix type">
+            <button class="tool" data-tool="tree" type="button" aria-pressed="false"><span>♣</span>Tree<small>RM 5k</small></button>
+            <button class="tool" data-tool="sail" type="button" aria-pressed="false"><span>◭</span>Shade sail<small>RM 15k</small></button>
+            <button class="tool" data-tool="crossing" type="button" aria-pressed="false"><span>⇄</span>Crossing<small>RM 90k</small></button>
+            <button class="tool" data-tool="light" type="button" aria-pressed="false"><span>✦</span>Light<small>RM 6k</small></button>
+          </div>
+          <div id="selectedFix" class="selected-fix" hidden></div>
+        </section>
+        <section class="section" aria-labelledby="layerTitle">
+          <div class="section-head"><span class="step">03</span><h2 id="layerTitle">Show layers</h2></div>
+          <label class="toggle"><input id="roadsToggle" type="checkbox" checked><span>Mapped walking links</span></label>
+          <label class="toggle"><input id="buildingsToggle" type="checkbox"><span>Mapped buildings</span></label>
+          <label class="toggle"><input id="destinationsToggle" type="checkbox" checked><span>Named destinations</span></label>
+          <label class="toggle"><input id="proposalsToggle" type="checkbox" checked><span>Proposed fixes</span></label>
+          <label class="toggle"><input id="reportsToggle" type="checkbox" checked><span>Resident reports</span></label>
+        </section>
+        <div class="sidebar-foot"><strong>What this map knows</strong><p>Street and building shapes are mapped OSM data. Foot access, shade, safety, costs and project boundaries still need field checks.</p></div>
+      </aside>
+      <section class="map-area" aria-label="Elmina map">
+        <div class="map-toolbar"><div class="map-heading"><strong>Elmina City Centre</strong><span>Walking priority by hour</span></div><label class="hour-control" for="priorityHour"><span>FIND</span><input id="priorityHour" type="range" min="7" max="19" step="1" value="12" aria-label="Hour for walking priority"><output id="priorityTime" for="priorityHour">12:00 PM</output></label><div class="map-controls"><button id="fitBtn" class="button secondary" type="button">Fit area</button><span id="saveStatus" role="status">Plan stored on this device</span></div></div>
+        <div id="map" role="application" aria-label="OpenStreetMap map of Elmina City Centre with editable Teduh planning overlays"></div>
+        <div class="map-legend" aria-label="Map legend"><span><i class="legend-line priority"></i>Estimated priority</span><span><i class="legend-line walk"></i>Mapped walking link</span><span><i class="legend-line route"></i>Selected route</span><span><i class="legend-dot"></i>Proposed fix</span><span><i class="legend-dot report"></i>Resident report</span></div>
+        <div id="mapNotice" class="map-notice" role="status">Loading mapped streets and buildings…</div>
+      </section>
+      <aside class="panel insights" aria-label="Plan details">
+        <div class="insights-head"><p class="eyebrow">PLANNING DESK</p><h2>One street at a time.</h2><p>Use the map to inspect mapped ways and test where a fix could go.</p></div>
+        <div class="stat-grid"><div class="stat"><strong id="wayCount">—</strong><span>mapped ways</span></div><div class="stat"><strong id="fixCount">0</strong><span>proposed fixes</span></div><div class="stat"><strong id="reportCount">0</strong><span>resident reports</span></div></div>
+        <section class="insight-section" aria-labelledby="inspectTitle"><h3 id="inspectTitle">Selected map feature</h3><div id="featureInfo" class="feature-info">Select a mapped street or proposed fix.</div></section>
+        <section class="insight-section" aria-labelledby="planTitle"><h3 id="planTitle">Proposed plan</h3><div id="planList" class="plan-list"><p class="muted">No fixes placed yet.</p></div><div class="plan-total"><span>Rough total</span><strong id="planTotal">RM 0</strong></div></section>
+        <section class="insight-section evidence"><h3>Evidence status</h3><p>This is a coordinate-accurate overlay on an OSM snapshot from 21 October 2026. The walking graph uses mapped way connections; a mapped road does not confirm a safe pavement or crossing.</p><p>Priority, shade and walker figures are planning scenario estimates. Building-height, canopy and field data are needed to validate them and any before/after impact.</p></section>
+      </aside>
+    </main>
+  </div>
+  <script src="./vendor/leaflet.js"></script>
+  <script src="./static-api.js"></script>
+  <script src="./app.js" defer></script>
+</body>
+</html>

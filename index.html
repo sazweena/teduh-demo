@@ -4,11 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <style>[hidden]{display:none!important}</style>
-<title>Teduh Demo</title>
+<title>Teduh | Elmina pilot</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap">
+<link rel="stylesheet" href="vendor/leaflet.css">
 <style>
 /* Layout: a working product. Planner website (sidebar + main) and resident phone, switchable or side by side. */
 :root{
@@ -37,7 +38,7 @@
   color-scheme:dark}
 *{box-sizing:border-box}
 html,body{height:100%}
-body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:14.5px;line-height:1.45;padding-left:max(0px, env(safe-area-inset-left, 0px));padding-right:max(0px, env(safe-area-inset-right, 0px))}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:14.5px;line-height:1.45;padding-left:max(0px, env(safe-area-inset-left, 0px));padding-right:max(0px, env(safe-area-inset-right, 0px))}
 h1,h2,h3,h4{font-family:var(--display);margin:0;letter-spacing:-.01em;text-wrap:balance}
 h2{font-size:24px;font-weight:800} h3{font-size:16px;font-weight:800} h4{font-size:14px;font-family:var(--body);font-weight:800}
 p{margin:0}
@@ -55,7 +56,7 @@ button{cursor:pointer}
 
 .root{min-height:100%}
 .split{display:grid;grid-template-columns:minmax(0,1fr) 420px;min-height:100vh}
-.split .stage{border-left:1px solid var(--line)}
+.split .stage{border-left:1px solid var(--line);padding-bottom:60px}
 
 /* staff */
 .staff{display:grid;grid-template-columns:210px minmax(0,1fr);min-height:100vh;position:relative;background:var(--bg)}
@@ -79,6 +80,7 @@ button{cursor:pointer}
 .dditem{border:0;background:transparent;text-align:left;padding:8px 10px;border-radius:8px;display:flex;gap:10px;align-items:flex-start;font-size:13px;width:100%}
 .dditem:hover{background:var(--surface-2)}
 .main{padding:20px 22px 80px;display:flex;flex-direction:column;gap:16px;min-width:0}
+.main.map-main{padding-bottom:12px;gap:10px}
 .mh{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
 .mh p{font-size:13px;color:var(--muted)}
 .kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
@@ -208,6 +210,24 @@ button.card:hover{border-color:var(--accent)}
 .heat b{font-family:var(--display);font-size:38px;font-weight:800;line-height:.95;display:block}
 .heat span{font-size:12px}
 svg.mm{flex:none;width:100%;height:auto;border-radius:14px;border:1px solid var(--line);background:var(--map-bg);display:block}
+.resident-map{height:200px;flex:none;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--map-bg);position:relative}
+.resident-map .leaflet-container{height:100%;width:100%;font-family:var(--body);background:var(--map-bg)}
+.resident-map .leaflet-control-attribution{font-size:10px;background:rgba(255,255,255,.9)}
+.resident-map .leaflet-control-attribution a{color:#124f44}
+.resident-map-state{position:absolute;inset:0;z-index:500;display:grid;place-items:center;padding:20px;background:var(--surface-2);color:var(--muted);text-align:center;font-size:13px}
+.resident-map-state button{display:block;margin:10px auto 0;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 12px;font-weight:700}
+.street-focus{display:flex;flex-direction:column;gap:8px;border:1px solid var(--line);border-radius:14px;padding:12px;background:var(--surface)}
+.street-focus .cardrow{align-items:flex-start}
+.street-focus h3{font-size:17px}
+.street-focus p{font-size:12px;color:var(--muted)}
+.street-focus .street-number{font-family:var(--display);font-size:24px;line-height:1;font-weight:800;color:var(--hot)}
+.street-focus .street-stat{display:flex;align-items:center;gap:8px;font-size:12px}
+.street-focus .street-stat strong{font-weight:800}
+.street-focus .street-actions{display:flex;gap:8px}
+.street-focus .street-actions button{flex:1;min-height:42px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font-weight:800;font-size:12px}
+.street-focus .street-actions .primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.map-caption{font-size:11px;color:var(--muted);margin-top:-6px}
+.map-caption a{color:var(--accent);font-weight:700}
 .legend{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:-6px}
 .cta{border:0;border-radius:14px;padding:14px;font-weight:800;font-size:15px;background:var(--accent);color:var(--accent-ink);width:100%}
 .cta.ghost{background:transparent;border:1px solid var(--line);color:var(--ink);font-weight:700}
@@ -253,15 +273,58 @@ svg.mm{flex:none;width:100%;height:auto;border-radius:14px;border:1px solid var(
 @media (max-width:900px){.scrim{left:0}.staff{grid-template-columns:minmax(0,1fr)}.side{flex-direction:row;overflow-x:auto;padding:8px;gap:4px}.logo,.side .foot{display:none}.navb{white-space:nowrap}.kpis,.ba{grid-template-columns:repeat(2,minmax(0,1fr))}.pillars,.grid2{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:520px){.main{padding:14px 14px 40px}.topbar{padding-left:14px;padding-right:14px}.bar{grid-template-columns:86px minmax(0,1fr) 38px}.stage{padding:0 0 64px}.phone{border:0;border-radius:0;width:100%;box-shadow:none}.scr{height:calc(100vh - 64px);max-height:none}.island{display:none}.dropdown{right:10px;width:calc(100% - 20px)}.switch button{padding:6px 7px;font-size:11.5px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+.real-map-frame{display:block;width:100%;height:clamp(400px,calc(100dvh - 205px),700px);border:1px solid var(--line);border-radius:12px;background:var(--map-bg)}
+.real-map-preview{display:block;width:100%;height:360px;border:1px solid var(--line);border-radius:10px;background:var(--map-bg)}
+.real-map-note,.concept-note{border:1px solid var(--line);border-radius:10px;background:var(--accent-soft);color:var(--ink);padding:9px 12px;font-size:12px;line-height:1.45}
+.live-report-item{border-top:1px solid var(--line);padding:12px 0;display:flex;flex-direction:column;gap:6px}.live-report-item p{font-size:13px}.live-report-item input{min-width:190px;flex:1;border:1px solid var(--line);border-radius:7px;padding:8px}.live-report-item select{border:1px solid var(--line);border-radius:7px;padding:7px;background:var(--surface)}
+@media (max-width:900px){.real-map-frame{height:clamp(400px,calc(100dvh - 220px),640px)}}
+@media (min-width:901px) and (max-width:1400px){.real-map-frame{height:clamp(400px,calc(100dvh - 275px),640px)}}
 </style>
 
 </head>
 <body>
 <div id="root" class="root"></div>
 
+<script src="vendor/leaflet.js"></script>
+<script src="static-api.js"></script>
 <script>
 (function(){
 /* ---------- data ---------- */
+const PILOT_STREET_ID="s4";
+const PILOT_OSM_WAY="way/1148541502";
+let residentMap=null;
+let residentMapData=null;
+function residentMapHTML(){return `<div class="resident-map" data-resident-map><div class="resident-map-state" role="status">Loading the mapped street…</div></div>`;}
+async function mountResidentMap(){
+ const host=document.querySelector('[data-resident-map]');
+ if(!host)return;
+ const state=host.querySelector('.resident-map-state');
+ try{
+  if(!window.L)throw Error('Map library unavailable');
+  residentMapData ||= fetch('elmina-map.json').then(r=>{if(!r.ok)throw Error('Street data unavailable');return r.json();}).catch(e=>{residentMapData=null;throw e;});
+  const data=await residentMapData;
+  if(!host.isConnected)return;
+  const road=data.roads.find(r=>r.id===PILOT_OSM_WAY);
+  if(!road)throw Error('Mapped street unavailable');
+  const points=road.coordinates.map(([lon,lat])=>[lat,lon]);
+  const map=L.map(host,{zoomControl:false,scrollWheelZoom:false,tap:false});
+  residentMap=map;
+  L.control.zoom({position:'topright'}).addTo(map);
+  const tiles=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
+   maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>'
+  }).addTo(map);
+  let loaded=false,failed=0;
+  tiles.on('tileload',()=>{loaded=true;});
+  tiles.on('tileerror',()=>{if(++failed>=3&&!loaded&&host.isConnected){state.innerHTML='Map tiles could not load. <button type="button" data-map-retry>Retry map</button>';state.hidden=false;}});
+  L.polyline(points,{color:'#fff',weight:13,opacity:.9,interactive:false}).addTo(map);
+  const line=L.polyline(points,{color:'#d2412a',weight:8,opacity:.95,interactive:true}).addTo(map);
+  line.bindTooltip('Jalan Elmina Ilham 3',{permanent:false,direction:'top'});
+  line.on('click',()=>{st.phone.sheet=PILOT_STREET_ID;render();});
+  map.fitBounds(line.getBounds(),{padding:[42,42],maxZoom:17});
+  state.hidden=true;
+  requestAnimationFrame(()=>{if(host.isConnected)map.invalidateSize();});
+ }catch(error){console.error('Resident map:',error);if(host.isConnected){state.innerHTML=`Could not load the mapped street. <button type="button" data-map-retry>Retry map</button>`;state.hidden=false;}}
+}
 const PX_M=1.5;
 const P={school:{7:1,8:.9,9:.2,10:.15,11:.2,12:.5,13:1,14:.8,15:.4,16:.3,17:.3,18:.25,19:.15,20:.1,21:.05,22:.03,23:.01},
  transit:{7:1,8:1,9:.6,10:.4,11:.4,12:.5,13:.5,14:.5,15:.5,16:.6,17:.9,18:1,19:.8,20:.6,21:.4,22:.25,23:.1},
@@ -273,7 +336,7 @@ const S=[
  {id:"s1",name:"Persiaran Elmina (west)",pts:[[20,180],[220,180]],type:"res",peak:40,trees:.55,bldg:.1,vul:.5,gap:.2,dark:.2},
  {id:"s2",name:"Persiaran Elmina (centre)",pts:[[220,180],[420,180]],type:"transit",peak:110,trees:.1,bldg:.1,vul:.6,gap:.7,dark:.3,why:"A wide avenue with young trees and no safe crossing between the bus stop and the houses.",fix:{mode:"day",label:"Raised zebra + refuge island + 14 trees",cost:150000,eff:{trees:.55,gap:.1}}},
  {id:"s3",name:"Persiaran Elmina (east)",pts:[[420,180],[620,180]],type:"mall",peak:70,trees:.3,bldg:.2,vul:.5,gap:.4,dark:.25},
- {id:"s4",name:"Jalan Elmina 3",pts:[[300,60],[300,180]],type:"school",peak:120,trees:.05,bldg:.15,vul:.95,gap:.9,dark:.5,why:"The school run and the walk to the bus stop share this street. Almost no shade at midday, a primary school 150 m away, and no safe crossing at the avenue.",fix:{mode:"day",label:"8 trees + shade sail + raised zebra",cost:70000,eff:{trees:.8,gap:.1}}},
+ {id:"s4",name:"Jalan Elmina 3",pts:[[300,60],[300,180]],type:"school",peak:120,trees:.05,bldg:.15,vul:.95,gap:.9,crossingDistanceM:150,dark:.5,why:"The school run and the walk to the bus stop share this street. Almost no shade at midday, with a primary school nearby and the nearest crossing 150 m away in this planning scenario.",fix:{mode:"day",label:"8 trees + shade sail + raised zebra",cost:70000,eff:{trees:.8,gap:.1}}},
  {id:"s5",name:"Jalan Sekolah (west)",pts:[[200,60],[300,60]],type:"school",peak:60,trees:.5,bldg:.1,vul:.9,gap:.3,dark:.3},
  {id:"s6",name:"Jalan Sekolah (to bus stop)",pts:[[300,60],[440,60]],type:"transit",peak:90,trees:.1,bldg:.1,vul:.7,gap:.3,dark:.6,why:"The main walk to the bus stop and the future LRT. Open pavement and a small bus-stop roof.",fix:{mode:"day",label:"Shade sails along 200 m + bigger bus-stop roof",cost:45000,eff:{trees:.65}}},
  {id:"s7",name:"Jalan Elmina 9",pts:[[460,60],[460,180]],type:"res",peak:35,trees:.4,bldg:.3,vul:.4,gap:.2,dark:.3},
@@ -297,7 +360,7 @@ const STATUSES=["Received","Seen","Planned","Built"];
 
 function seed(){return {
  view:"staff",
- staff:{screen:"overview",drawer:null,filter:"All",bell:false,layers:{reports:true,fixes:true},period:"this",avatar:false},
+ staff:{screen:"map",drawer:null,filter:"All",bell:false,layers:{reports:true,fixes:true},period:"this",avatar:false},
  mode:"day",hour:14,tried:new Set(),manual:{},budget:300000,modal:null,toast:null,nextId:1042,
  reports:[
   {id:"R-1041",sid:"s4",kind:"hot",metoo:23,age:"2 days ago",status:"Planned",note:"No shade at all at 1pm school pick-up",src:"Owner app",mine:false,follow:true,replies:[{who:"Township team",t:"Thank you. Shade sail and a raised crossing are planned for March.",when:"Yesterday"}]},
@@ -323,10 +386,7 @@ const active=(s,extra)=>s.fix&&(st.tried.has(s.id)||isBuilt(s)||(extra&&extra.ha
 const v=(s,k,extra)=>active(s,extra)&&k in s.fix.eff?s.fix.eff[k]:s[k];
 const walkers=(s,h)=>s.peak*(P[s.type][h]||0);
 const shade=(s,h,extra)=>Math.min(.95,v(s,"trees",extra)+s.bldg*Math.min(1,Math.abs(h-13)/5));
-const rawD=(s,h,extra)=>walkers(s,h)*(1-shade(s,h,extra))*s.vul*(.4+.6*v(s,"gap",extra));
-const rawN=(s,h,extra)=>walkers(s,h)*v(s,"dark",extra)*s.vul*(.4+.6*v(s,"gap",extra));
-let DMAX=0,NMAX=0;S.forEach(s=>{for(let h=8;h<=19;h++)DMAX=Math.max(DMAX,s.peak*(P[s.type][h]||0)*(1-Math.min(.95,s.trees+s.bldg*Math.min(1,Math.abs(h-13)/5)))*s.vul*(.4+.6*s.gap));for(let h=19;h<=23;h++)NMAX=Math.max(NMAX,s.peak*(P[s.type][h]||0)*s.dark*s.vul*(.4+.6*s.gap));});
-const score=(s,mode=st.mode,h=st.hour,extra)=>Math.round(100*Math.sqrt(Math.max(0,mode==="day"?rawD(s,h,extra)/DMAX:rawN(s,h,extra)/NMAX)));
+const score=(s,mode=st.mode,h=st.hour,extra)=>Math.round(100*(walkers(s,h)/120)*(mode==="day"?1-shade(s,h,extra):v(s,"dark",extra))*s.vul*v(s,"gap",extra));
 const daily=s=>{let t=0;for(let h=7;h<=22;h++)t+=walkers(s,h);return Math.round(t/10)*10;};
 const gain=s=>s.fix.eff.trees!=null?Math.round(s.len*(s.fix.eff.trees-s.trees)):s.len;
 const value=s=>daily(s)/(s.fix.cost/10000);
@@ -334,6 +394,7 @@ const FIXES=S.filter(s=>s.fix).sort((a,b)=>value(b)-value(a));
 const col=x=>{const c=[[46,157,108],[224,160,25],[210,65,42]];const t=Math.max(0,Math.min(1,x/100));const a=t<.5?c[0]:c[1],b=t<.5?c[1]:c[2],u=t<.5?t*2:(t-.5)*2;return `rgb(${a.map((q,i)=>Math.round(q+(b[i]-q)*u)).join(",")})`;};
 const fmtH=h=>`${((h+11)%12)+1}:00 ${h>=12?"pm":"am"}`;
 const rm=n=>n>=1e6?"RM"+(n/1e6).toFixed(1)+"m":"RM"+Math.round(n/1000)+"k";
+const rmFull=n=>"RM"+n.toLocaleString("en-MY");
 const esc=t=>String(t==null?"":t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const pth=s=>"M"+s.pts.map(p=>p.join(",")).join(" L");
 const mid=s=>{const i=Math.floor((s.pts.length-1)/2),a=s.pts[i],b=s.pts[i+1];return[(a[0]+b[0])/2,(a[1]+b[1])/2];};
@@ -377,48 +438,56 @@ function toast(t){st.toast=t;clearTimeout(toastTimer);toastTimer=setTimeout(()=>
 function notifyResident(r,title,body){if(!(r.mine||r.follow))return;st.notifs.unshift({id:st.nextN++,kind:"report",rid:r.id,title,body,when:"now",unread:true});
  st.phone.banner={title,body,rid:r.id};clearTimeout(bannerTimer);bannerTimer=setTimeout(()=>{st.phone.banner=null;render();},4500);}
 
+let liveReports = [], liveProposals = [], liveServiceError = '';
+async function refreshLiveReports(){
+ try{const [reportsResponse,proposalsResponse]=await Promise.all([fetch('/api/reports'),fetch('/api/proposals')]);const [reportsBody,proposalsBody]=await Promise.all([reportsResponse.json(),proposalsResponse.json()]);if(!reportsResponse.ok||!proposalsResponse.ok)throw Error(reportsBody.error||proposalsBody.error||'Shared data unavailable');liveReports=reportsBody.reports;liveProposals=proposalsBody.proposals;liveServiceError='';}
+ catch(error){liveServiceError=error.message;}
+ if(['reports','plan'].includes(st.staff.screen)&&st.view!=='resident')render();
+}
 /* ---------- staff screens ---------- */
 const NAV=[["overview","Overview"],["map","Map"],["plan","Fix plan"],["reports","Reports"],["impact","Impact"],["sources","Sources"]];
-function staffHTML(){const S2=st.staff;const nf=fresh().length;
+function staffHTML(){const S2=st.staff;const nf=liveReports.filter(r=>r.status==='Received').length+fresh().length;
  const scr={overview,map:mapScreen,plan,reports,impact,sources}[S2.screen]();
  return `<div class="staff"><nav class="side" aria-label="Planner"><div class="logo"><i></i>Teduh</div>
- ${NAV.map(([k,l])=>`<button class="navb" data-nav="${k}" aria-current="${S2.screen===k}">${l}${k==="reports"?`<span class="cnt ${nf?"":"soft"}">${openReports().length}</span>`:""}</button>`).join("")}
+ ${NAV.map(([k,l])=>`<button class="navb" data-nav="${k}" aria-current="${S2.screen===k}">${l}${k==="reports"?`<span class="cnt ${nf?"":"soft"}">${liveReports.filter(r=>r.status!=="Built").length+openReports().length}</span>`:""}</button>`).join("")}
  <div class="foot">Township planning team</div></nav>
  <div class="mainwrap"><div class="topbar"><select data-township aria-label="Township"><option>Elmina City Centre</option><option>Bandar Bukit Raja</option><option>Kulai (plan check)</option></select>
-  <span class="note">34°C today · MET Malaysia: no alert</span><span class="sp"></span>
+  <span class="note">Elmina planning workspace</span><span class="sp"></span>
   <button class="iconbtn" data-bell aria-label="New reports">🔔${nf?`<span class="cnt">${nf}</span>`:""}</button><button class="avatar" data-avatar aria-label="Account">TP</button>
-  ${S2.bell?`<div class="dropdown"><h4 style="padding:4px 10px">New resident reports</h4>${nf?fresh().map(r=>`<button class="dditem" data-report="${r.id}">${ic(r.kind)}<span><b>${esc(byId[r.sid].name)}</b><br><span class="note">${esc(r.note||KIND[r.kind].l)} · ${r.age}</span></span></button>`).join(""):`<p class="note" style="padding:6px 10px">No new reports.</p>`}<button class="btn ghost sm" data-nav="reports" style="margin:4px 10px 6px">Open inbox</button></div>`:""}
+  ${S2.bell?`<div class="dropdown"><h4 style="padding:4px 10px">New resident reports</h4>${nf?fresh().map(r=>`<button class="dditem" data-report="${r.id}">${ic(r.kind)}<span><b>${esc(byId[r.sid].name)}</b><br><span class="note">${esc(r.note||KIND[r.kind].l)} · ${r.age}</span></span></button>`).join("")+liveReports.filter(r=>r.status==='Received').map(r=>`<button class="dditem" data-nav="reports"><span><b>${esc(r.road_name||'Elmina City Centre')}</b><br><span class="note">${esc(KIND[r.kind]?.l||r.kind)} · shared report</span></span></button>`).join(""):`<p class="note" style="padding:6px 10px">No new reports.</p>`}<button class="btn ghost sm" data-nav="reports" style="margin:4px 10px 6px">Open inbox</button></div>`:""}
   ${S2.avatar?`<div class="dropdown" style="right:22px;width:240px"><p style="padding:6px 10px"><b>Township planning team</b><br><span class="note">Elmina City Centre</span></p><button class="dditem" data-nav="sources">Data and sources</button><button class="dditem" data-act="signout">Sign out</button></div>`:""}
- </div><div class="main">${scr}</div></div>
+ </div><div class="main ${S2.screen==='map'?'map-main':''}">${scr}</div></div>
  ${S2.drawer?`<div class="scrim" data-close></div>${drawerHTML()}`:""}</div>`;}
 
 function overview(){const pl=st.reports.filter(r=>r.status==="Planned").length,bu=st.reports.filter(r=>r.status==="Built").length;
- return `<div class="mh"><div><h2>Elmina City Centre</h2><p>Walking heat and safety, updated 2:00 pm</p></div><button class="btn ghost sm" data-nav="map">Open full map</button></div>
- <div class="kpis"><button class="kpi" data-nav="map"><b>${shadedPct()}%</b><span>walking routes shaded at 2pm</span></button><button class="kpi" data-nav="map"><b>${redCount()}</b><span>red streets at 2pm</span></button><button class="kpi" data-nav="reports"><b>${openReports().length}</b><span>open resident reports${fresh().length?` · <b style="display:inline;font-size:12px;color:var(--hot)">${fresh().length} new</b>`:""}</span></button><button class="kpi" data-nav="plan"><b>${pl} / ${bu}</b><span>fixes planned / built</span></button></div>
- <div class="grid2"><div class="box"><h3>Streets at 2pm</h3>${mapSVG({mode:"day",hour:14,attr:"data-street"})}<span class="note">Tap a street for details. Circles show how many residents are asking.</span></div>
+ return `<div class="mh"><div><h2>Elmina City Centre</h2><p>Mapped walking streets and township planning activity</p></div><button class="btn ghost sm" data-nav="map">Open walking map</button></div>
+ <div class="kpis"><button class="kpi" data-nav="map"><b>${shadedPct()}%</b><span>estimated routes shaded at 2pm</span></button><button class="kpi" data-nav="map"><b>${redCount()}</b><span>priority streets at 2pm</span></button><button class="kpi" data-nav="reports"><b>${openReports().length}</b><span>open scenario reports${fresh().length?` · <b style="display:inline;font-size:12px;color:var(--hot)">${fresh().length} new</b>`:""}</span></button><button class="kpi" data-nav="plan"><b>${pl} / ${bu}</b><span>scenario fixes planned / built</span></button></div>
+ <div class="grid2"><div class="box"><h3>Mapped Elmina streets</h3><iframe class="real-map-preview" src="map.html?compact=1" title="OpenStreetMap streets in Elmina City Centre" loading="lazy"></iframe><p class="note">OpenStreetMap walking links. Select Map to inspect streets, reports and proposed fixes.</p><button class="btn ghost sm" data-nav="map">Open street map</button></div>
  <div class="box"><div class="mh"><h3>Best-value fixes</h3><button class="btn ghost sm" data-nav="plan">Fix plan</button></div>
  ${FIXES.slice(0,5).map(s=>`<button class="rowbtn" data-street="${s.id}"><span><b>${esc(s.name)}</b><small>${esc(s.fix.label)} · ${rm(s.fix.cost)}</small></span><span class="mono" style="color:var(--accent);font-weight:700">${Math.round(value(s))}</span></button>`).join("")}
  <span class="note">Trips a day helped per RM10k</span>
  <h3 style="margin-top:6px">Latest reports</h3>${st.reports.slice(0,3).map(r=>`<button class="rowbtn" data-report="${r.id}"><span style="display:flex;gap:8px;align-items:center">${ic(r.kind)}<span><b>${esc(byId[r.sid].name)}</b><small>${r.age} · ${r.metoo} × Me too</small></span></span>${r.fresh?`<span class="pill new">New</span>`:pill(r.status)}</button>`).join("")}</div></div>`;}
 
-function mapScreen(){const L=st.staff.layers;
- return `<div class="mh"><div><h2>Map</h2><p>${st.mode==="day"?"Many walkers in the sun with no safe crossing":"Many walkers in the dark with no lit crossing"} = red</p></div><span class="note">Low<span class="ramp"></span>High</span></div>
- <div class="controls"><div class="seg" role="group" aria-label="Mode"><button data-mode="day" aria-pressed="${st.mode==="day"}">Day</button><button data-mode="night" aria-pressed="${st.mode==="night"}">Night</button></div>
- <label class="slider"><span class="big">${fmtH(st.hour)}</span><input type="range" data-hour min="${st.mode==="day"?8:19}" max="${st.mode==="day"?19:23}" value="${st.hour}" aria-label="Hour"></label>
- <button class="chk" data-layer="reports" aria-pressed="${L.reports}">Reports</button><button class="chk" data-layer="fixes" aria-pressed="${L.fixes}">Fixes</button></div>
- <div class="box" style="padding:8px">${mapSVG({attr:"data-street",sel:st.staff.drawer&&st.staff.drawer.type==="street"?st.staff.drawer.id:null,showReports:L.reports,showFixes:L.fixes})}</div>`;}
+function mapScreen(){
+ return `<div class="mh"><div><h2>Elmina walking map</h2><p>Inspect mapped streets, trace a walk, and locate reported problems and proposed fixes.</p></div><div class="btns"><a class="btn ghost sm" href="report.html?source=qr" target="_blank" rel="noopener">Report a street</a><a class="btn ghost sm" href="map.html" target="_blank" rel="noopener">Open full map</a></div></div>
+ <iframe class="real-map-frame" src="map.html?embedded=1" title="Interactive OpenStreetMap planning map of Elmina City Centre" loading="eager"></iframe><p class="note">Street geometry comes from OpenStreetMap. Priority, shade and walker figures are planning estimates until the route and inputs are field checked.</p>`;}
 
-function plan(){const pick=planSet();let c=0,wk=0,m=0;pick.forEach(id=>{const s=byId[id];c+=s.fix.cost;wk+=daily(s);m+=gain(s);});const over=c>st.budget;
- return `<div class="mh"><div><h2>Fix plan</h2><p>Best value first: trips helped per RM10k. Tick or untick to adjust.</p></div><div class="btns"><button class="btn ghost sm" data-act="autoplan">Reset to best value</button><button class="btn ghost sm" data-act="export">Export CSV</button><button class="btn sm" data-act="council">Send to council</button></div></div>
- <div class="controls"><label class="slider"><span class="big">${rm(st.budget)}</span><input type="range" data-budget min="50000" max="600000" step="10000" value="${st.budget}" aria-label="Budget"></label><span class="note">budget this year</span></div>
+function plan(){const pick=planSet();let c=0,wk=0;pick.forEach(id=>{const s=byId[id];c+=s.fix.cost;wk+=daily(s);});const over=c>st.budget;
+ return `<div class="mh"><div><h2>Fix plan</h2><p>Set a budget and compare the value of each proposed fix.</p></div><div class="btns"><button class="btn ghost sm" data-act="autoplan">Reset plan</button><button class="btn ghost sm" data-act="export">Export CSV</button><button class="btn sm" data-act="council">Council handoff</button></div></div>
+ <div class="box"><h3>Mapped proposed fixes <span class="pill">${liveProposals.length}</span></h3><p class="note">These pins are saved in this browser. Costs are placeholders; shade gain and trips helped need site data before value ranking.</p>${liveServiceError?`<p class="note">Local data: ${esc(liveServiceError)}</p>`:liveProposals.length?liveProposals.map(x=>`<div class="live-report-item" data-live-proposal="${x.id}"><div class="cardrow"><div><b>${esc({tree:'Tree',sail:'Shade sail',crossing:'Raised crossing',light:'Street light'}[x.kind])}</b><p class="note">${Number(x.coordinates[1]).toFixed(5)}, ${Number(x.coordinates[0]).toFixed(5)} · RM ${Number(x.cost_rm_estimate).toLocaleString('en-MY')} rough cost</p></div><span class="pill">${esc(x.status)}</span></div><div class="controls"><label class="note">Status <select data-proposal-status>${['proposed','planned','built'].map(status=>`<option ${status===x.status?'selected':''}>${status}</option>`).join('')}</select></label><button class="btn sm" data-live-proposal-save="${x.id}">Save status</button></div></div>`).join(''):`<p class="note">No fixes saved in this browser yet. Place one on the map.</p>`}<div class="cardrow"><b>Rough total</b><b>RM ${liveProposals.reduce((a,x)=>a+Number(x.cost_rm_estimate),0).toLocaleString('en-MY')}</b></div></div>
+ <h3>Budget allocation</h3>
+ <div class="controls"><label class="slider"><span class="big">${rmFull(st.budget)}</span><input type="range" data-budget min="50000" max="600000" step="10000" value="${st.budget}" aria-label="Budget"></label><span class="note">available budget</span></div>
  <div class="tw"><table><thead><tr><th></th><th>Street</th><th>Fix</th><th class="num">Cost</th><th class="num">Trips/day</th><th class="num">Value</th><th>Status</th></tr></thead><tbody>
  ${FIXES.map(s=>{const on=pick.has(s.id);const r=st.reports.find(x=>x.sid===s.id);return `<tr class="${on?"":"out"}"><td><button class="tick ${on?"on":""}" data-toggle="${s.id}" aria-label="Include ${esc(s.name)}" aria-pressed="${on}">${on?"✓":""}</button></td><td><button class="rowbtn" data-street="${s.id}" style="border:0;padding:0"><span><b>${esc(s.name)}</b><small>${s.fix.mode==="night"?"Night fix":"Day fix"}</small></span></button></td><td>${esc(s.fix.label)}</td><td class="num">${rm(s.fix.cost)}</td><td class="num">${daily(s).toLocaleString()}</td><td class="num">${Math.round(value(s))}</td><td>${isBuilt(s)?pill("Built"):on?pill("Planned"):`<span class="note">Not in plan</span>`}</td></tr>`;}).join("")}
  </tbody></table></div>
- <div class="kpis"><div class="kpi"><b>${pick.size}</b><span>fixes in plan</span></div><div class="kpi"><b style="color:${over?"var(--hot)":"inherit"}">${rm(c)}</b><span>${over?"over budget":"total cost"}</span></div><div class="kpi"><b>${wk.toLocaleString()}</b><span>trips a day helped</span></div><div class="kpi"><b>${m.toLocaleString()} m</b><span>shaded or lit</span></div></div>
- <p class="compare">One footbridge costs about <b>RM1–2m</b>. This plan helps ${wk.toLocaleString()} trips a day for ${rm(c)}.</p>`;}
+ <div class="kpis" aria-live="polite"><div class="kpi"><b>${pick.size}</b><span>fixes selected</span></div><div class="kpi"><b style="color:${over?"var(--hot)":"inherit"}">${rmFull(c)}</b><span>${over?"over budget":"allocated"}</span></div><div class="kpi"><b>${wk.toLocaleString()}</b><span>daily trips on selected streets</span></div><div class="kpi"><b>${rmFull(st.budget-c)}</b><span>budget remaining</span></div></div>
+ <p class="compare">${pick.size} fixes cost <b>${rmFull(c)}</b> at a <b>${rmFull(st.budget)}</b> budget. ${wk.toLocaleString()} estimated daily trips use those streets. Portfolio value: <b>${c?Math.round(wk/(c/10000)):0} trips per RM10,000</b> (${wk.toLocaleString()} ÷ ${c?`${rmFull(c)} / RM10,000`:"0"}). One footbridge costs about RM1-2m.</p><p class="note">Planning estimates use scenario inputs and rough costs; site checks and local quotes are required.</p>`;}
 
 function reports(){const f=st.staff.filter;const list=st.reports.filter(r=>f==="All"||r.status===f).sort((a,b)=>(b.fresh?1:0)-(a.fresh?1:0)||b.metoo-a.metoo);
- return `<div class="mh"><div><h2>Reports</h2><p>From the owner app's "My street" tab and QR stickers. Residents see every status change.</p></div></div>
+ return `<div class="mh"><div><h2>Reports</h2><p>Review resident observations and move each issue through its status.</p></div><a class="btn sm" href="report.html?source=qr" target="_blank" rel="noopener">Open report form</a></div>
+ <div class="box"><h3>Mapped pilot inbox <span class="pill">${liveReports.length}</span></h3><p class="note">Reports here have real coordinates and are saved in this browser. Status and reply updates appear on the resident tracking page in the same browser.</p>
+ ${liveServiceError?`<p class="note">Shared service: ${esc(liveServiceError)}</p>`:liveReports.length?liveReports.map(r=>`<div class="live-report-item" data-live-id="${r.id}"><div class="cardrow"><div><b>${esc(KIND[r.kind]?.l||r.kind)}</b><p class="note">${esc(r.road_name||'Elmina City Centre')} · ${Number(r.coordinates[1]).toFixed(5)}, ${Number(r.coordinates[0]).toFixed(5)} · ${r.me_too_count} Me too</p></div>${pill(r.status)}</div><p>${esc(r.note||'No note')}</p><div class="controls"><label class="note">Status <select data-live-status>${STATUSES.map(status=>`<option ${status===r.status?'selected':''}>${status}</option>`).join('')}</select></label><input data-live-reply maxlength="800" aria-label="Reply to report" placeholder="Reply visible to resident" value="${esc(r.reply||'')}"><button class="btn sm" data-live-save="${r.id}">Save update</button></div></div>`).join(''):`<p class="note">No live reports yet. Open the form to pin a walking problem.</p>`}</div>
+ <h3>Planning scenario reports</h3>
  <div class="tabsf">${["All",...STATUSES].map(x=>`<button data-filter="${x}" aria-pressed="${f===x}">${x} <span class="mono">${x==="All"?st.reports.length:st.reports.filter(r=>r.status===x).length}</span></button>`).join("")}</div>
  <div class="tw"><table><thead><tr><th>ID</th><th>Street</th><th>Problem</th><th class="num">Me too</th><th>Source</th><th>When</th><th>Status</th></tr></thead><tbody>
  ${list.length?list.map(r=>`<tr class="click" data-report="${r.id}"><td class="mono">${r.id}</td><td><b>${esc(byId[r.sid].name)}</b><br><span class="note">"${esc(r.note||KIND[r.kind].l)}"</span></td><td><span style="display:inline-flex;gap:6px;align-items:center">${ic(r.kind)}${KIND[r.kind].l}</span></td><td class="num">${r.metoo}</td><td>${esc(r.src)}</td><td>${r.age}</td><td>${r.fresh?`<span class="pill new">New</span> `:""}${pill(r.status)}</td></tr>`).join(""):`<tr><td colspan="7" class="note">No reports with this status.</td></tr>`}
@@ -427,21 +496,21 @@ function reports(){const f=st.staff.filter;const list=st.reports.filter(r=>f==="
 function impact(){const nextYear=st.staff.period==="next";const pick=nextYear?planSet(st.budget+200000,false):planSet();let wk=0,c=0;pick.forEach(id=>{wk+=daily(byId[id]);c+=byId[id].fix.cost;});const closed=st.reports.filter(r=>r.status==="Built").length;
  return `<div class="mh"><div><h2>Impact</h2><p>If the ${nextYear?"next two years'":"this year's"} plan (${rm(c)}) is built</p></div><div class="btns"><div class="seg"><button data-period="this" aria-pressed="${!nextYear}">This year</button><button data-period="next" aria-pressed="${nextYear}">+ next year</button></div><button class="btn ghost sm" data-act="summary">Copy summary</button></div></div>
  <div class="ba"><div><small>Walking routes shaded at 2pm</small><b>${shadedPct()}%</b> → <b style="color:var(--accent)">${shadedPct(pick)}%</b></div><div><small>Red streets at 2pm</small><b>${redCount()}</b> → <b style="color:var(--accent)">${redCount(pick)}</b></div><div><small>Trips a day on fixed streets</small><b style="color:var(--accent)">${wk.toLocaleString()}</b></div><div><small>Resident reports closed</small><b>${closed}</b> of <b>${st.reports.length}</b></div></div>
- <div class="box"><h3>Shade at 2pm, after the plan</h3>${mapSVG({mode:"day",hour:14,attr:"data-street",showReports:false,override:Object.fromEntries([...pick].map(id=>[id,col(score(byId[id],"day",14,pick))]))})}</div>
- <div class="pillars"><div class="pillar"><b>Climate Resilience</b>Heat on walking routes, measured street by street.</div><div class="pillar"><b>Community Experience</b>${st.reports.length} resident reports, ${closed} closed, ${st.reports.reduce((a,r)=>a+r.metoo,0)} Me too votes.</div><div class="pillar"><b>Urban Biodiversity</b>Metres of route shaded by trees, not only trees planted.</div></div>
+ <div class="box"><h3>Elmina streets and proposed fixes</h3><iframe class="real-map-preview" src="map.html?compact=1" title="OpenStreetMap streets and proposed fixes in Elmina City Centre" loading="lazy"></iframe><p class="note">The map shows actual street geometry and saved fix locations. The figures above are estimates pending shade and walker checks.</p></div>
+ <div class="pillars"><div class="pillar"><b>Climate Resilience</b>Heat exposure on walking routes, estimated street by street.</div><div class="pillar"><b>Community Experience</b>${st.reports.length} scenario reports, ${closed} closed, ${st.reports.reduce((a,r)=>a+r.metoo,0)} Me too votes.</div><div class="pillar"><b>Urban Biodiversity</b>Estimated metres of route shaded by trees.</div></div>
  <button class="later" data-act="plancheck" style="text-align:left;background:transparent;width:100%"><b>Plan check:</b> run Teduh on a new township layout before building. Kulai, first launch 2028 →</button>`;}
 
-function sources(){return `<div class="mh"><div><h2>Data and sources</h2><p>Public or synthetic data only</p></div></div>
- <div class="box"><ul class="srcs"><li><b>Streets, crossings, paths:</b> OpenStreetMap</li><li><b>Building heights:</b> Google Open Buildings 2.5D</li><li><b>Tree canopy:</b> Meta High-Resolution Canopy Height, checked with field photos</li><li><b>Shade by hour:</b> sun position plus buildings and trees</li><li><b>Walkers:</b> street-network estimate with WorldPop homes and destinations, calibrated by field counts</li><li><b>Weather:</b> data.gov.my MET Malaysia API; Education Ministry 35°C advisory</li><li><b>Fix effects:</b> US FHWA proven safety countermeasures</li><li><b>Costs:</b> public ranges; local quotes needed</li></ul>
- <p class="note">Score = walkers × sun (or darkness) × who walks × missing crossing, compared with the worst street in the area. All values in this demo are synthetic.</p></div>`;}
+function sources(){return `<div class="mh"><div><h2>Data and methods</h2><p>Source status for the Elmina planning workspace</p></div></div>
+ <div class="box"><ul class="srcs"><li><b>Mapped geography:</b> OpenStreetMap extract, 21 October 2026</li><li><b>Planning scenario:</b> 20 street segments with estimated walkers, exposure, crossing gaps and rough fix costs</li><li><b>Future shade inputs:</b> building heights, tree canopy and sun position, checked against field photos</li><li><b>Future demand inputs:</b> homes, destinations and 15-minute field counts</li><li><b>Fix decisions:</b> local quotes, ownership and site approval checks</li></ul>
+ <p class="note">Priority = normalized walkers × sun exposure (or darkness) × vulnerable groups × crossing gap. Budget value = estimated daily trips on a selected street ÷ cost per RM10,000. Scenario results are estimates, not measured outcomes.</p></div>`;}
 
 function drawerHTML(){const d=st.staff.drawer;
  if(d.type==="street"){const s=byId[d.id];const R=S.map(x=>({x,sc:score(x)})).sort((a,b)=>b.sc-a.sc);const pos=R.findIndex(r=>r.x.id===s.id)+1,sc=R[pos-1].sc,h=st.hour,night=st.mode==="night";const w=walkers(s,h);const sun=night?v(s,"dark"):1-shade(s,h);const reps=st.reports.filter(r=>r.sid===s.id);const inPlan=planSet().has(s.id);
   return `<aside class="drawer" aria-label="Street detail"><div class="dhead"><div><span class="rank" style="background:${col(sc)}">#${pos} of ${S.length}</span> <span class="note">${fmtH(h)}, ${night?"night":"day"}</span></div><button class="x" data-close aria-label="Close">×</button></div>
-  <div class="dbody"><div class="sname">${esc(s.name)}</div>
+  <div class="dbody"><div class="sname">${esc(s.name)}</div><p><b>Priority score ${(sc/100).toFixed(2)}</b> at ${fmtH(h)}</p>
   <div class="bars">${bar("Walkers",Math.min(1,w/120),"var(--accent)",Math.round(w)+"/h")}${bar(night?"Darkness":"In the sun",sun,night?"var(--night)":"var(--hot)",Math.round(sun*100)+"%")}${bar("Who walks",s.vul,"var(--warm)",Math.round(s.vul*100)+"%")}${bar("Missing crossing",v(s,"gap"),"var(--brown)",Math.round(v(s,"gap")*100)+"%")}</div>
-  <p class="note">Mostly ${WHO[s.type]} · ${s.len} m long</p>${(night?s.whyN||s.why:s.why||s.whyN)?`<p class="reason">${esc(night?s.whyN||s.why:s.why||s.whyN)}</p>`:""}
-  <h3>Resident reports (${reps.length})</h3>${reps.length?reps.map(r=>`<button class="rowbtn" data-report="${r.id}"><span style="display:flex;gap:8px;align-items:center">${ic(r.kind)}<span><b>${KIND[r.kind].l}</b><small>${r.metoo} × Me too · ${r.age}</small></span></span>${pill(r.status)}</button>`).join(""):`<p class="note">No reports yet. Ranked from public data.</p>`}
+  <p class="note">${(w/120).toFixed(2)} × ${sun.toFixed(2)} × ${s.vul.toFixed(2)} × ${v(s,"gap").toFixed(2)} = ${(sc/100).toFixed(2)} · Mostly ${WHO[s.type]} · ${s.len} m long${s.crossingDistanceM?` · Crossing ${s.crossingDistanceM} m away (scenario estimate)`:""}</p>${(night?s.whyN||s.why:s.why||s.whyN)?`<p class="reason">${esc(night?s.whyN||s.why:s.why||s.whyN)}</p>`:""}
+  <h3>Resident reports (${reps.length})</h3>${reps.length?reps.map(r=>`<button class="rowbtn" data-report="${r.id}"><span style="display:flex;gap:8px;align-items:center">${ic(r.kind)}<span><b>${KIND[r.kind].l}</b><small>${r.metoo} × Me too · ${r.age}</small></span></span>${pill(r.status)}</button>`).join(""):`<p class="note">No reports yet. Ranked from scenario inputs.</p>`}
   ${s.fix?`<h3>Suggested fix</h3><p>${esc(s.fix.label)}</p><div class="kv"><div><b>${rm(s.fix.cost)}</b>rough cost</div><div><b>${daily(s).toLocaleString()}</b>trips a day</div><div><b>${gain(s)} m</b>${s.fix.eff.trees!=null?"shaded":"lit"}</div></div>
   <div class="btns"><button class="btn" data-plan="${s.id}">${inPlan?"In plan ✓ (remove)":"Add to plan"}</button><button class="btn ghost" data-try="${s.id}">${st.tried.has(s.id)?"Undo preview":"Preview as built"}</button></div>`:`<p class="note">No fix suggested. This street is not a priority.</p>`}</div></aside>`;}
  const r=repById(d.id);const s=byId[r.sid];const idx=STATUSES.indexOf(r.status);
@@ -466,12 +535,16 @@ function host(){return `${status("9:41")}<div class="pbody"><div class="hosthead
  <button class="card" data-pgo="inbox"><h4>My street: ${st.notifs.filter(n=>n.unread).length} updates</h4><p class="sm-t">${esc(st.notifs[0].title)}</p></button>
  <button class="card" data-ptoast="Defects"><h4>Defect #4471</h4><p class="sm-t">Kitchen tile · fixed 3 Oct</p></button></div>${pnav("host")}`;}
 function phome(){const p=st.phone;const mine=st.reports.filter(r=>r.mine).length;const sheet=p.sheet?byId[p.sheet]:null;
+ const pilot=byId[PILOT_STREET_ID],pilotReport=st.reports.find(r=>r.sid===PILOT_STREET_ID&&r.kind==="hot");
  return `${status()}${pbar("My street","Elmina City Centre")}<div class="pbody">
- <button class="heat" data-pgo="inbox"><div><span>Today in Shah Alam</span><b>34°C</b><span>Hottest 1–4pm · MET Malaysia</span></div><span style="text-align:right">Tomorrow<br><b style="font-size:20px;display:inline">36°C</b></span></button>
- ${mapSVG({mode:"day",hour:14,attr:"data-pstreet",home:true,cls:"mm",onlyMine:true})}
- <div class="legend"><span>Streets now · tap one</span><span>shady<span class="ramp" style="width:60px"></span>sun</span></div>
- ${sheet?`<div class="sheet"><div class="cardrow"><b>${esc(sheet.name)}</b><button class="x" data-psheet="" aria-label="Close" style="width:28px;height:28px">×</button></div><span class="sm-t">${Math.round((1-shade(sheet,14))*100)}% in sun at 2pm · ${st.reports.filter(r=>r.sid===sheet.id).reduce((a,r)=>a+r.metoo+1,0)} reports</span><button class="cta" data-preport="${sheet.id}" style="padding:10px">Report a problem here</button></div>`:""}
- <button class="cta" data-pgo="kind">Report a street problem</button>
+ <button class="heat" data-pgo="inbox"><div><span>Shah Alam · planning scenario</span><b>34°C</b><span>Hottest 1–4pm</span></div><span style="text-align:right">Tomorrow<br><b style="font-size:20px;display:inline">36°C</b></span></button>
+ ${residentMapHTML()}
+ <p class="map-caption">Nearby mapped street: Jalan Elmina Ilham 3. Confirm the exact pilot street on site. <a href="https://www.openstreetmap.org/way/1148541502" target="_blank" rel="noopener">View OSM way</a></p>
+ <div class="street-focus"><div class="cardrow"><div><h3>${esc(pilot.name)}</h3><p>School run and bus stop walk · pilot scenario</p></div>${pill("Planned")}</div>
+ <div class="street-stat"><span class="street-number">95%</span><span><strong>estimated sun exposure at 1pm</strong><br>120 walkers/hour · 150 m crossing gap (scenario inputs)</span></div>
+ <p>Proposed here: 8 trees, a shade sail and a raised zebra crossing.</p>
+ <div class="street-actions"><button class="primary" data-preport="${PILOT_STREET_ID}">Report a problem</button><button data-home-metoo="${pilotReport.id}">Me too · ${pilotReport.metoo}</button></div></div>
+ ${sheet?`<div class="sheet"><div class="cardrow"><b>${esc(sheet.name)}</b><button class="x" data-psheet="" aria-label="Close" style="width:40px;height:40px">×</button></div><span class="sm-t">Shown on nearby Jalan Elmina Ilham 3. Heat and crossing figures are scenario estimates.</span><button class="cta" data-preport="${sheet.id}" style="padding:10px">Report a problem here</button></div>`:""}
  <button class="card" data-pgo="mine"><div class="cardrow"><div><h4>My reports</h4><p class="sm-t">${mine} sent · ${st.reports.filter(r=>r.follow).length} followed</p></div><span>›</span></div></button>
  <h4>Being fixed near you</h4>
  ${st.reports.filter(r=>r.follow||r.mine).filter(r=>r.status==="Planned"||r.status==="Built").map(r=>`<button class="card" data-${r.status==="Built"?"pfixed":"ptrack"}="${r.status==="Built"?r.sid:r.id}"><div class="cardrow"><div><h4>${esc(byId[r.sid].name)}</h4><p class="sm-t">${esc(byId[r.sid].fix?byId[r.sid].fix.label:KIND[r.kind].l)}</p></div>${pill(r.status)}</div></button>`).join("")||`<p class="sm-t">Nothing planned near you yet.</p>`}
@@ -479,10 +552,11 @@ function phome(){const p=st.phone;const mine=st.reports.filter(r=>r.mine).length
 function pkind(){return `${status()}${pbar("Report a street","Step 1 of 3 · What's the problem?")}<div class="pbody">
  ${Object.entries(KIND).map(([k,o])=>`<button class="opt" data-pkind="${k}"><span class="sw" style="background:${o.c}">${o.g}</span><span>${o.l}<small>${o.d}</small></span></button>`).join("")}
  <p class="sm-t" style="margin-top:auto">Your report goes to the township team. Neighbours don't see your name.</p></div>`;}
-function ppin(){const d=st.phone.draft;const existing=d.sid?st.reports.filter(r=>r.sid===d.sid&&r.status!=="Built"):[];const n=existing.reduce((a,r)=>a+r.metoo+1,0);
+function ppin(){const d=st.phone.draft;const existing=d.sid?st.reports.filter(r=>r.sid===d.sid&&r.kind===d.kind&&r.status!=="Built"):[];const n=existing.reduce((a,r)=>a+r.metoo+1,0);
  return `${status()}${pbar("Report a street","Step 2 of 3 · Where and what")}<div class="pbody">
- ${mapSVG({mode:"day",hour:14,attr:"data-pick",colour:false,showReports:false,showFixes:false,home:true,cls:"mm",pin:d.x!=null?{x:d.x,y:d.y,kind:d.kind}:null})}
- <p style="font-size:13px">${d.sid?`<b>${esc(byId[d.sid].name)}</b> · ${KIND[d.kind].l}`:"Tap the street on the map"}</p>
+ ${residentMapHTML()}
+ <p class="map-caption">Nearby mapped street: Jalan Elmina Ilham 3. Confirm the exact pilot street on site.</p>
+ <p style="font-size:13px"><b>${esc(byId[d.sid].name)}</b> · ${KIND[d.kind].l}</p>
  ${n?`<div class="metoo"><span><b>${n} neighbours</b> already reported this street.</span><button data-pmetoo>Me too</button></div>`:""}
  <label class="upl">${d.photo?`<img class="thumb" src="${d.photo}" alt="Your photo">`:""}<span>${d.photo?"Change photo":"Add a photo"}</span><span class="note">optional</span><input type="file" accept="image/*" data-pphoto></label>
  <textarea data-pnote placeholder="Add a note (optional)" rows="2">${esc(d.note||"")}</textarea>
@@ -526,13 +600,15 @@ function webScreen(){const w=st.phone.web;
 const root=document.getElementById("root");
 function render(){
  const keep=document.activeElement;const key=keep&&keep.dataset?Object.keys(keep.dataset)[0]:null;const selStart=keep&&keep.selectionStart;
- const sw=`<div class="switch" role="group" aria-label="View">${[["staff","Sime Darby"],["resident","Resident"],["split","Side by side"]].map(([k,l])=>`<button data-view="${k}" aria-pressed="${st.view===k&&!(k==="resident"&&st.phone.qr)}">${l}</button>`).join("")}<button data-view="qr" aria-pressed="${st.view!=="staff"&&st.phone.qr}">QR</button><span class="sep"></span><button data-reset>Reset</button><span class="sep"></span><a href="sdp-app.html" style="display:inline-flex;align-items:center;padding:6px 10px;border-radius:8px;font-size:12.5px;font-weight:700;color:var(--accent);text-decoration:none;white-space:nowrap">SDP app concept ↗</a></div>`;
+ if(residentMap){residentMap.remove();residentMap=null;}
+ const sw=`<div class="switch" role="group" aria-label="View">${[["staff","Sime Darby"],["resident","Resident"],["split","Side by side"]].map(([k,l])=>`<button data-view="${k}" aria-pressed="${st.view===k&&!(k==="resident"&&st.phone.qr)}">${l}</button>`).join("")}<button data-view="qr" aria-pressed="${st.view!=="staff"&&st.phone.qr}">QR</button><span class="sep"></span><button data-reset>Reset pitch</button><span class="sep"></span><a href="report.html?source=owner" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;padding:6px 10px;border-radius:8px;font-size:12.5px;font-weight:700;color:var(--accent);text-decoration:none;white-space:nowrap">Report form</a><a href="sdp-app.html" style="display:inline-flex;align-items:center;padding:6px 10px;border-radius:8px;font-size:12.5px;font-weight:700;color:var(--accent);text-decoration:none;white-space:nowrap">SDP app integration ↗</a></div>`;
  let body;
  if(st.view==="staff")body=staffHTML();
  else if(st.view==="resident")body=`<div class="stage">${phoneHTML()}</div>`;
  else body=`<div class="split">${staffHTML()}<div class="stage">${phoneHTML()}</div></div>`;
  const m=st.modal?`<div class="modalwrap" data-mclose><div class="modal" role="dialog" aria-modal="true" aria-label="${esc(st.modal.title)}"><h3>${esc(st.modal.title)}</h3>${st.modal.body||""}${st.modal.copy!=null?`<textarea readonly data-copytext>${esc(st.modal.copy)}</textarea>`:""}<div class="btns" style="justify-content:flex-end">${st.modal.copy!=null?`<button class="btn" data-copy>Copy</button>`:""}${st.modal.confirm?`<button class="btn" data-confirm>${esc(st.modal.confirm)}</button>`:""}<button class="btn ghost" data-mx>Close</button></div></div></div>`:"";
  root.innerHTML=sw+body+m+(st.toast?`<div class="toast" role="status">${esc(st.toast)}</div>`:"");
+ mountResidentMap();
  if(key&&["hour","budget","replytext","pnote","wnote"].includes(key)){const n=root.querySelector(`[data-${key}]`);if(n){n.focus();try{if(selStart!=null&&n.setSelectionRange)n.setSelectionRange(selStart,selStart);}catch(e){}}}
 }
 
@@ -544,16 +620,23 @@ function readFile(input,cb){const f=input.files&&input.files[0];if(!f)return;if(
 
 document.addEventListener("click",e=>{
  const t=e.target;
+ if(t.closest&&t.closest('[data-map-retry]')){residentMapData=null;if(residentMap){residentMap.remove();residentMap=null;}mountResidentMap();return;}
+ const proposalSave=t.closest&&t.closest('[data-live-proposal-save]');
+ if(proposalSave){const card=proposalSave.closest('.live-report-item');const status=card.querySelector('[data-proposal-status]').value;proposalSave.disabled=true;
+  fetch(`/api/proposals/${proposalSave.dataset.liveProposalSave}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status})}).then(async response=>{const body=await response.json();if(!response.ok)throw Error(body.error||'Could not save');toast('Proposal status updated');await refreshLiveReports();}).catch(error=>{toast(error.message);render();});return;}
+ const liveSave=t.closest&&t.closest('[data-live-save]');
+ if(liveSave){const card=liveSave.closest('.live-report-item');const status=card.querySelector('[data-live-status]').value;const reply=card.querySelector('[data-live-reply]').value.trim();liveSave.disabled=true;
+  fetch(`/api/reports/${liveSave.dataset.liveSave}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status,reply})}).then(async response=>{const body=await response.json();if(!response.ok)throw Error(body.error||'Could not save');toast('Pilot report updated');await refreshLiveReports();}).catch(error=>{toast(error.message);render();});return;}
  const pick=t.closest&&t.closest("svg[data-pick]");
  if(pick){const pt=pick.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;const q=pt.matrixTransform(pick.getScreenCTM().inverse());const n=nearest(q.x,q.y);Object.assign(st.phone.draft,{sid:n.sid,x:n.x,y:n.y});render();return;}
- const el=t.closest&&t.closest("[data-view],[data-reset],[data-nav],[data-bell],[data-avatar],[data-street],[data-report],[data-close],[data-mode],[data-layer],[data-toggle],[data-filter],[data-setstatus],[data-plan],[data-try],[data-period],[data-act],[data-mx],[data-mclose],[data-copy],[data-confirm],[data-pgo],[data-pback],[data-ptoast],[data-pstreet],[data-psheet],[data-preport],[data-pkind],[data-pmetoo],[data-psend],[data-ptrack],[data-pfixed],[data-pnotif],[data-wkind],[data-wsend],[data-wagain]");
+ const el=t.closest&&t.closest("[data-view],[data-reset],[data-nav],[data-bell],[data-avatar],[data-street],[data-report],[data-close],[data-mode],[data-layer],[data-toggle],[data-filter],[data-setstatus],[data-plan],[data-try],[data-period],[data-act],[data-mx],[data-mclose],[data-copy],[data-confirm],[data-pgo],[data-pback],[data-ptoast],[data-pstreet],[data-psheet],[data-preport],[data-home-metoo],[data-pkind],[data-pmetoo],[data-psend],[data-ptrack],[data-pfixed],[data-pnotif],[data-wkind],[data-wsend],[data-wagain]");
  if(!el)return;const d=el.dataset;
  if(d.mclose!==undefined&&el!==t)return; // clicks inside the modal box
- if(d.view){if(d.view==="qr"){st.phone.qr=true;if(st.view==="staff")st.view="split";}else{st.view=d.view;if(d.view!=="staff")st.phone.qr=false;}render();return;}
- if(d.reset!==undefined){st=seed();toast("Demo reset");render();return;}
+ if(d.view){if(d.view==="qr"){st.phone.qr=true;if(st.view==="staff")st.view="split";}else{st.view=d.view;if(d.view!=="staff"){st.phone.qr=false;if(st.phone.screen==="host")st.phone.screen="home";}}render();return;}
+ if(d.reset!==undefined){st=seed();st.view="split";st.staff.screen="map";st.phone.screen="home";st.hour=12;st.budget=100000;window.scrollTo(0,0);toast("Pitch view ready");render();return;}
  /* staff */
  if(d.nav){st.staff.screen=d.nav;st.staff.drawer=null;st.staff.bell=false;st.staff.avatar=false;render();return;}
- if(d.bell!==undefined){st.staff.bell=!st.staff.bell;st.staff.avatar=false;render();return;}
+ if(d.bell!==undefined){st.staff.screen='reports';st.staff.bell=false;st.staff.avatar=false;render();return;}
  if(d.avatar!==undefined){st.staff.avatar=!st.staff.avatar;st.staff.bell=false;render();return;}
  if(d.street){openStreet(d.street);render();return;}
  if(d.report){openReport(d.report);render();return;}
@@ -571,16 +654,16 @@ document.addEventListener("click",e=>{
  if(d.act){const a=d.act;
   if(a==="reply"){const r=repById(st.staff.drawer.id);const txt=(st.staff.replyDraft||"").trim();if(!txt){toast("Write a reply first");render();return;}r.replies.push({who:"Township team",t:txt,when:"just now"});st.staff.replyDraft="";notifyResident(r,`Reply about ${byId[r.sid].name}`,txt);toast(r.mine||r.follow?"Reply sent · resident notified":"Reply sent");render();return;}
   if(a==="export"){const pick=planSet();st.modal={title:"Export fix plan (CSV)",copy:"street,fix,cost_rm,trips_per_day,value_per_rm10k\n"+FIXES.filter(s=>pick.has(s.id)).map(s=>[`"${s.name}"`,`"${s.fix.label}"`,s.fix.cost,daily(s),Math.round(value(s))].join(",")).join("\n")};render();return;}
-  if(a==="council"){const pick=planSet();let c=0;pick.forEach(id=>c+=byId[id].fix.cost);st.modal={title:"Send fix plan to the council",body:`<p>Send ${pick.size} fixes (${rm(c)}) to <b>Majlis Bandaraya Shah Alam</b> for road and crossing approval?</p>`,confirm:"Send"};render();return;}
+  if(a==="council"){st.modal={title:"Council handoff",body:"<p>Export this plan for review. Council submissions require site checks and an approved process; this action does not send the plan.</p>"};render();return;}
   if(a==="summary"){const pick=planSet();let wk=0;pick.forEach(id=>wk+=daily(byId[id]));st.modal={title:"Impact summary",copy:`Elmina City Centre walking heat (Teduh)\nWalking routes shaded at 2pm: ${shadedPct()}% -> ${shadedPct(pick)}% after plan\nRed streets at 2pm: ${redCount()} -> ${redCount(pick)}\nTrips a day on fixed streets: ${wk}\nResident reports: ${st.reports.length}, closed: ${st.reports.filter(r=>r.status==="Built").length}`};render();return;}
   if(a==="autoplan"){st.manual={};toast("Plan reset to best value within budget");render();return;}
   if(a==="plancheck"){st.modal={title:"Plan check: Kulai",body:`<p>Upload a township layout (DWG, GeoJSON or PDF plan) and Teduh scores the future streets for shade and crossings before construction.</p><p class="note">Coming after the pilot.</p>`};render();return;}
-  if(a==="signout"){st.staff.avatar=false;toast("Signed out (demo)");render();return;}
+  if(a==="signout"){st.staff.avatar=false;toast("Account menu closed");render();return;}
  }
  if(d.mx!==undefined||d.mclose!==undefined){st.modal=null;render();return;}
  if(d.copy!==undefined){const txt=st.modal.copy;const ta=root.querySelector("[data-copytext]");const fallback=()=>{if(ta){ta.focus();ta.select();}toast("Selected. Press Ctrl or Cmd + C to copy");render();const n=root.querySelector("[data-copytext]");if(n){n.focus();n.select();}};
   try{navigator.clipboard.writeText(txt).then(()=>{toast("Copied");render();},fallback);}catch(err){fallback();}return;}
- if(d.confirm!==undefined){st.modal=null;toast("Sent to Majlis Bandaraya Shah Alam");render();return;}
+ if(d.confirm!==undefined){st.modal=null;render();return;}
  /* phone */
  const p=st.phone;
  if(d.pgo){if(d.pgo==="kind")p.draft=null;pgo(d.pgo);render();return;}
@@ -588,9 +671,10 @@ document.addEventListener("click",e=>{
  if(d.ptoast){toast(`${d.ptoast} is an existing owner-app feature`);render();return;}
  if(d.pstreet){p.sheet=d.pstreet;render();return;}
  if(d.psheet!==undefined){p.sheet=null;render();return;}
+ if(d.homeMetoo){const r=repById(d.homeMetoo);r.metoo++;r.follow=true;p.rid=r.id;p.metoo=true;p.hist=["host","home"];p.screen="sent";render();return;}
  if(d.preport){const s=byId[d.preport];const [x,y]=mid(s);p.draft={kind:null,sid:s.id,x,y,photo:null,note:""};pgo("kind");render();return;}
- if(d.pkind){if(!p.draft)p.draft={kind:null,sid:null,x:null,y:null,photo:null,note:""};p.draft.kind=d.pkind;pgo("pin");render();return;}
- if(d.pmetoo!==undefined){const ex=st.reports.filter(r=>r.sid===p.draft.sid&&r.status!=="Built").sort((a,b)=>b.metoo-a.metoo)[0];ex.metoo++;ex.follow=true;p.rid=ex.id;p.metoo=true;p.hist=["host","home"];p.screen="sent";render();return;}
+ if(d.pkind){if(!p.draft)p.draft={kind:null,sid:PILOT_STREET_ID,x:null,y:null,photo:null,note:""};p.draft.kind=d.pkind;pgo("pin");render();return;}
+ if(d.pmetoo!==undefined){const ex=st.reports.filter(r=>r.sid===p.draft.sid&&r.kind===p.draft.kind&&r.status!=="Built").sort((a,b)=>b.metoo-a.metoo)[0];ex.metoo++;ex.follow=true;p.rid=ex.id;p.metoo=true;p.hist=["host","home"];p.screen="sent";render();return;}
  if(d.psend!==undefined){const dr=p.draft;const r={id:"R-"+(st.nextId++),sid:dr.sid,kind:dr.kind,metoo:0,age:"just now",status:"Received",note:dr.note||"",photo:dr.photo,src:"Owner app",mine:true,fresh:true,replies:[]};st.reports.unshift(r);p.rid=r.id;p.metoo=false;p.hist=["host","home"];p.screen="sent";toast("New report sent to the township team");render();return;}
  if(d.ptrack){p.rid=d.ptrack;p.banner=null;st.notifs.forEach(n=>{if(n.rid===d.ptrack)n.unread=false;});if(p.qr)p.qr=false;pgo("track");render();return;}
  if(d.pfixed){p.fixSid=d.pfixed;pgo("fixed");render();return;}
@@ -609,10 +693,13 @@ document.addEventListener("input",e=>{const t=e.target;if(!t.dataset)return;
 document.addEventListener("change",e=>{const t=e.target;if(!t.dataset)return;
  if(t.dataset.pphoto!==undefined)readFile(t,u=>{st.phone.draft.photo=u;render();});
  if(t.dataset.wphoto!==undefined)readFile(t,u=>{st.phone.web.photo=u;render();});
- if(t.dataset.township!==undefined&&t.value!=="Elmina City Centre"){const v2=t.value;t.value="Elmina City Centre";st.modal={title:v2,body:v2.startsWith("Kulai")?`<p>Plan check scores a township layout before it is built. Upload a layout to start.</p><p class="note">Coming after the pilot.</p>`:`<p>${esc(v2)} is not set up in this demo yet. The same engine runs on any township in Malaysia.</p>`};render();}
+ if(t.dataset.township!==undefined&&t.value!=="Elmina City Centre"){const v2=t.value;t.value="Elmina City Centre";st.modal={title:v2,body:v2.startsWith("Kulai")?`<p>Plan check scores a township layout before it is built. Upload a layout to start.</p><p class="note">Coming after the pilot.</p>`:`<p>${esc(v2)} is not set up in this workspace yet.</p>`};render();}
 });
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(st.modal)st.modal=null;else if(st.staff.drawer)st.staff.drawer=null;else{st.staff.bell=false;st.staff.avatar=false;}render();}});
 render();
+refreshLiveReports();
+setInterval(refreshLiveReports,20000);
+window.addEventListener('storage',event=>{if(event.key==='teduh-team-local-v1')refreshLiveReports();});
 })();
 </script>
 

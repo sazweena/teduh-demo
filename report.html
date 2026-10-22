@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#12302a">
+  <title>Teduh | Report a street</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="./vendor/leaflet.css">
+  <style>
+    :root{font-family:Figtree,"Segoe UI",sans-serif;color:#13211c;background:#eef3f0;--green:#0d6b5b;--deep:#12302a;--line:#d5e0da;--muted:#5a6b64}
+    *{box-sizing:border-box}body{margin:0}button,input,textarea{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid #e0a019;outline-offset:2px}
+    header{background:var(--deep);color:#fff;padding:15px max(16px,calc((100vw - 1080px)/2));display:flex;justify-content:space-between;align-items:center;gap:15px}
+    header strong{font-family:"Bricolage Grotesque",sans-serif;font-size:22px}header a{color:#d9eee8;text-decoration:none;font-size:13px;font-weight:700}
+    main{max-width:1080px;margin:0 auto;padding:25px 16px 70px}h1,h2{font-family:"Bricolage Grotesque",sans-serif;letter-spacing:-.04em}h1{font-size:34px;margin:0 0 6px}h2{font-size:20px;margin:0 0 10px}p{line-height:1.5}.lead{color:var(--muted);margin:0 0 20px}
+    .grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(290px,.75fr);gap:16px}.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;min-width:0}.card p{font-size:13px;color:var(--muted)}
+    #map{height:480px;border-radius:10px;margin:12px 0;background:#dce8df}.hint{font-size:12px;color:var(--muted)}.selected{font-size:13px;background:#eef7f1;border-radius:8px;padding:10px;margin:10px 0}
+    label.field{display:block;font-size:13px;font-weight:700;margin:14px 0 5px}textarea{width:100%;min-height:95px;border:1px solid var(--line);border-radius:8px;padding:10px;resize:vertical}.kinds{display:grid;grid-template-columns:1fr 1fr;gap:8px}.kind{padding:10px;background:#f5f8f5;border:1px solid var(--line);border-radius:9px;text-align:left;font-size:13px;font-weight:700}.kind[aria-pressed=true]{background:#d9eee8;border-color:var(--green)}.primary,.secondary{border:0;border-radius:9px;padding:11px 14px;font-size:13px;font-weight:800}.primary{background:var(--green);color:white}.secondary{background:#e9efeb;color:#1a5343}.primary:disabled{opacity:.5;cursor:not-allowed}
+    .item{border-top:1px solid var(--line);padding:11px 0;font-size:13px}.item:first-child{border-top:0}.item strong{display:block}.item small{color:var(--muted)}.item .actions{display:flex;gap:8px;align-items:center;margin-top:7px}.pill{font-size:11px;background:#e7f2e9;color:#1c5945;padding:3px 7px;border-radius:20px;font-weight:800}.status{padding:10px 12px;border-radius:9px;background:#e7f2e9;font-size:13px;margin:12px 0}.status.error{background:#fff0e7;color:#8a3e20}[hidden]{display:none!important}
+    @media(max-width:760px){.grid{grid-template-columns:1fr}#map{height:340px}h1{font-size:30px}}
+  </style>
+</head>
+<body>
+  <header><strong>Teduh</strong><a href="index.html">Back to planning workspace</a></header>
+  <main>
+    <h1>Report a street</h1>
+    <p class="lead">Pin a place in Elmina City Centre and describe what makes walking difficult. Reports on this site are saved in this browser for planning review. Please avoid personal information in the note.</p>
+    <div class="grid">
+      <section class="card" aria-labelledby="mapTitle"><h2 id="mapTitle">Choose the location</h2><p>Tap the map where you saw the problem. Existing reports appear as amber pins.</p><div id="map" aria-label="Elmina report map"></div><div id="chosen" class="selected">No location selected yet.</div><span class="hint">Mapped streets are from OpenStreetMap. A report is a resident observation until checked.</span></section>
+      <div>
+        <section class="card" aria-labelledby="formTitle"><h2 id="formTitle">What happened?</h2><div class="kinds" role="group" aria-label="Problem type"><button class="kind" data-kind="hot" aria-pressed="false">Too hot / no shade</button><button class="kind" data-kind="cross" aria-pressed="false">Unsafe crossing</button><button class="kind" data-kind="dark" aria-pressed="false">Too dark</button><button class="kind" data-kind="broken" aria-pressed="false">Broken path</button></div><label class="field" for="note">Details (optional)</label><textarea id="note" maxlength="800" placeholder="What did you see? Avoid names or phone numbers."></textarea><button id="submit" class="primary" disabled>Send report</button><div id="message" class="status" hidden role="status"></div></section>
+        <section class="card" style="margin-top:16px"><h2>Reports near you</h2><div id="reports"><p>Loading reports…</p></div></section>
+        <section class="card" style="margin-top:16px"><h2>Your reports</h2><div id="mine"><p>Reports submitted in this browser will appear here.</p></div></section>
+      </div>
+    </div>
+  </main>
+  <script src="./vendor/leaflet.js"></script>
+  <script src="./static-api.js"></script>
+  <script src="./report.js" defer></script>
+</body>
+</html>
