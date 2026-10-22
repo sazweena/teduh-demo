@@ -1,6 +1,6 @@
 # Teduh pitch alignment and team repo handoff
 
-Date: 22 October 2026. The spoken script is `source-ref/simelarps-teduh-pitch-script-2026-10-22.md`. The current visual deck is `Teduh_Deck_Visual.pdf`. Keep the script unchanged for this pass.
+Date: 22 October 2026. The spoken script is `source-ref/simelarps-teduh-pitch-script-2026-10-22.md`. The current visual deck is `Teduh_Deck_Visual.pdf`. Step 2 narration now follows the verified budget modal and map preview.
 
 ## Align the 10 main slides before recording
 

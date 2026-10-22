@@ -11,7 +11,7 @@ Teduh helps township planners inspect walking heat, compare fixes within a budge
 - Resident report form: https://sazweena.github.io/teduh-demo/report.html
 - Proposed owner-app integration: https://sazweena.github.io/teduh-demo/sdp-app.html
 
-Use *Reset pitch* to open the planner map and resident view side by side at noon. Move the FIND slider to 1:00 PM to see the highlighted planning route change to dark red. Its scenario priority becomes 0.81, with 120 walkers per hour, 95% sun exposure, and a 150 m crossing gap. In *Fix plan*, set RM300,000 to compare the selected fixes, total cost, and estimated trips helped. The resident phone flow can submit a scenario report and show the planner response.
+Use *Reset pitch* to open the planner map and resident view side by side at noon. Move the FIND slider to 1:00 PM to see the highlighted planning route change to dark red. Its scenario priority becomes 0.81, with 120 walkers per hour, 95% sun exposure, and a 150 m crossing gap. Click *Next: Plan fixes*, set RM300,000, and confirm. The recommendation shows 5 fixes, RM263,000 allocated, and 2,960 estimated daily trips. Click *Preview on map* to inspect the illustrative Jalan Elmina 3 tree, sail, and crossing locations. The resident phone flow can submit a scenario report and show the planner response.
 
 ## Data and limits
 

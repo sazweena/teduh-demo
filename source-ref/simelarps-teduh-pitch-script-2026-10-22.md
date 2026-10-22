@@ -56,7 +56,7 @@ Looking at the Sime Darby Planner Dashboard on the left, as I drag our time slid
 
 Step 2: FIX, The Automated Budget Engine
 
-Now, watch what happens when we scroll down to our budget slider. When we set an available budget of RM300,000, the system instantly runs our Value Formula across all proposed fixes. It skips multi-million ringgit bridges and auto-selects 5 high-yield fixes totaling RM263,000, including 8 trees, a shade sail, and a raised zebra crossing on Jalan Elmina 3. This single budget protects nearly 3,000 daily walking trips.
+Now I click "Next: Plan fixes". In the budget window, I set RM300,000 and press "Confirm budget". Teduh applies our Value Formula and shows 5 high-yield fixes totaling RM263,000, well below the cost of a multi-million ringgit bridge. I press "Preview on map" to show the proposed Jalan Elmina 3 bundle: 8 trees, a shade sail, and a raised zebra crossing. This single budget protects nearly 3,000 daily walking trips.
 
 Step 3: FEEDBACK, Closing the Loop
 
