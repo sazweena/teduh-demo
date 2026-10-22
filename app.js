@@ -23,6 +23,7 @@ function updatePriority() {
   const hour = Number($('priorityHour').value);
   const { walkers, exposure, score } = priorityAt(hour);
   $('priorityTime').textContent = `${hour > 12 ? hour - 12 : hour}:00 ${hour >= 12 ? 'PM' : 'AM'}`;
+  if (window.parent !== window) window.parent.postMessage({ type: 'teduh-hour', hour }, location.origin);
   if (!priorityLine) return;
   priorityLine.setStyle({ color: score >= .75 ? '#b52f27' : score >= .55 ? '#dc6940' : score >= .35 ? '#e0a019' : '#2e9d6c' });
   priorityLine.bringToFront();
@@ -32,6 +33,53 @@ function updatePriority() {
     <dt>Sun exposure</dt><dd>${exposure}%, estimated</dd><dt>Nearby</dt><dd>Primary school, scenario input</dd>
     <dt>Crossing gap</dt><dd>150 m, scenario input</dd><dt>Mapped line</dt><dd>${esc(pilotRoad.name)} · OSM ${esc(pilotRoad.id)}</dd></dl>
     <span class="muted">The mapped street is a nearby visual reference. Its foot access and the pilot route need site confirmation; the priority values are planning estimates.</span>`;
+}
+function showFixPreview() {
+  if (!pilotRoad) return;
+  const points = pilotRoad.coordinates.map(latlng);
+  const lengths = points.slice(1).map((point, index) => map.distance(points[index], point));
+  const total = lengths.reduce((sum, length) => sum + length, 0);
+  const along = fraction => {
+    let remaining = total * fraction;
+    for (let i = 0; i < lengths.length; i++) {
+      if (remaining <= lengths[i] || i === lengths.length - 1) {
+        const ratio = Math.min(1, remaining / lengths[i]);
+        return [points[i][0] + (points[i + 1][0] - points[i][0]) * ratio,
+          points[i][1] + (points[i + 1][1] - points[i][1]) * ratio];
+      }
+      remaining -= lengths[i];
+    }
+    return points.at(-1);
+  };
+  const beside = (fraction, metres) => {
+    const point = along(fraction), before = along(Math.max(0, fraction - .01)), after = along(Math.min(1, fraction + .01));
+    const east = (after[1] - before[1]) * Math.cos(point[0] * Math.PI / 180);
+    const north = after[0] - before[0];
+    const length = Math.hypot(east, north) || 1;
+    return [point[0] + east / length * metres / 111320,
+      point[1] - north / length * metres / (111320 * Math.cos(point[0] * Math.PI / 180))];
+  };
+  const layer = L.featureGroup().addTo(map);
+  [.12, .22, .32, .42, .58, .68, .78, .88].forEach((fraction, index) => {
+    L.circleMarker(beside(fraction, 7), { radius: 7, color: '#fff', weight: 2, fillColor: '#25845c',
+      fillOpacity: 1, bubblingMouseEvents: false }).bindTooltip(`Tree ${index + 1} of 8 · proposed`).addTo(layer);
+  });
+  const pin = (fraction, type, label) => L.marker(along(fraction), {
+    icon: L.divIcon({ className: '', html: `<span class="preview-pin ${type}">${type === 'sail' ? 'S' : ''}</span>`,
+      iconSize: type === 'sail' ? [25, 25] : [30, 22], iconAnchor: type === 'sail' ? [12, 12] : [15, 11] }),
+    bubblingMouseEvents: false,
+  }).bindTooltip(label).addTo(layer);
+  L.marker(beside(.5, -9), { icon: L.divIcon({ className: '', html: '<span class="preview-pin sail">S</span>', iconSize: [25, 25], iconAnchor: [12, 12] }), bubblingMouseEvents: false })
+    .bindTooltip('Shade sail · proposed').addTo(layer);
+  pin(.03, 'crossing', 'Raised zebra crossing · proposed');
+  map.fitBounds(layer.getBounds(), { padding: [60, 60], maxZoom: 18 });
+  document.querySelector('.map-heading strong').textContent = 'Jalan Elmina 3 fix preview';
+  document.querySelector('.map-heading span').textContent = 'Proposed locations';
+  $('featureInfo').innerHTML = `<strong>Jalan Elmina 3 · proposed bundle</strong>
+    <div class="priority-readout"><strong>RM70k</strong><span>scenario bundle estimate</span></div>
+    <dl><dt>Trees</dt><dd>8 proposed shade spots</dd><dt>Shade sail</dt><dd>1 proposed location</dd>
+    <dt>Crossing</dt><dd>Raised zebra, proposed location</dd><dt>Mapped line</dt><dd>${esc(pilotRoad.name)} · OSM ${esc(pilotRoad.id)}</dd></dl>
+    <span class="muted">Markers are illustrative positions along a nearby mapped way. Confirm the pilot route, foot access, utilities, and exact fix locations on site.</span>`;
 }
 
 function esc(value) {
@@ -312,6 +360,8 @@ async function init() {
     }
     pilotRoad = data.roads.find(road => road.id === PILOT_WAY_ID);
     if (pilotRoad && !document.documentElement.classList.contains('compact')) {
+      const requestedHour = Number(new URLSearchParams(location.search).get('hour'));
+      if (Number.isInteger(requestedHour) && requestedHour >= 7 && requestedHour <= 19) $('priorityHour').value = String(requestedHour);
       priorityLine = L.polyline(pilotRoad.coordinates.map(latlng), {
         color: '#e0a019', weight: 10, opacity: .95, lineCap: 'round', bubblingMouseEvents: false,
       }).addTo(map);
@@ -326,6 +376,11 @@ async function init() {
     for (const place of data.destinations) {
       L.marker(latlng(place.coordinates), { icon: L.divIcon({ className: '', html: '<span class="poi-pin"></span>', iconSize: [9, 9], iconAnchor: [4, 4] }) })
         .bindTooltip(`${esc(place.name)} · ${esc(place.kind)}`).addTo(destinationLayer);
+    }
+    if (document.documentElement.classList.contains('preview') && pilotRoad) {
+      $('priorityHour').value = '13';
+      updatePriority();
+      showFixPreview();
     }
     for (const [a, b, metres, penalty] of data.edges) {
       if (!graph.has(a)) graph.set(a, []);

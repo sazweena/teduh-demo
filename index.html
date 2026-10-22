@@ -173,6 +173,29 @@ textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:9px 
 .modalwrap{position:fixed;inset:0;background:rgba(8,20,16,.45);z-index:80;display:grid;place-items:center;padding:16px}
 .modal{background:var(--surface);border-radius:16px;width:min(520px,100%);padding:18px;display:flex;flex-direction:column;gap:12px;box-shadow:0 30px 60px -30px var(--shadow)}
 .modal textarea{font-family:var(--mono);font-size:12px;min-height:150px}
+.modal.pitch-modal{width:min(610px,100%);max-height:calc(100dvh - 32px);overflow:auto;padding:24px;gap:16px}
+.pitch-modal .pitch-step{font-size:11px;font-weight:800;letter-spacing:.14em;color:var(--accent)}
+.pitch-modal h3{font-family:var(--display);font-size:25px;line-height:1.1;margin:0}
+.pitch-modal p{font-size:13px;line-height:1.5;color:var(--muted)}
+.pitch-budget{display:grid;gap:11px;border:1px solid var(--line);border-radius:14px;padding:16px;background:var(--surface-2)}
+.pitch-budget-head{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px;font-weight:700}
+.pitch-budget-head strong{font-family:var(--display);font-size:27px;font-variant-numeric:tabular-nums}
+.pitch-budget input{width:100%;accent-color:var(--accent)}
+.pitch-budget-scale{display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
+.pitch-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.pitch-stats div{border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--surface)}
+.pitch-stats strong{display:block;font-family:var(--display);font-size:20px;font-variant-numeric:tabular-nums}
+.pitch-stats span{display:block;font-size:11px;color:var(--muted)}
+.pitch-result-list{display:grid;gap:7px;max-height:320px;overflow:auto}
+.pitch-result-row{display:flex;justify-content:space-between;gap:12px;align-items:start;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:12px}
+.pitch-result-row.pilot{border-color:var(--accent);background:var(--accent-soft)}
+.pitch-result-row strong{display:block;font-size:13px}
+.pitch-result-row small{display:block;color:var(--muted);margin-top:3px}
+.pitch-result-row b{white-space:nowrap;font-variant-numeric:tabular-nums}
+.pitch-progress{height:9px;overflow:hidden;border-radius:99px;background:var(--line)}
+.pitch-progress span{display:block;height:100%;width:100%;background:var(--accent);transform-origin:left;animation:pitch-calc 1.3s linear both}
+@keyframes pitch-calc{from{transform:scaleX(.02)}to{transform:scaleX(1)}}
+@media(max-width:520px){.modal.pitch-modal{padding:17px}.pitch-stats{grid-template-columns:repeat(3,minmax(0,1fr))}.pitch-stats strong{font-size:16px}}
 .toast{position:fixed;left:50%;bottom:calc(70px + env(safe-area-inset-bottom, 0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:700;font-size:13.5px;z-index:90;box-shadow:0 12px 30px -12px var(--shadow);max-width:calc(100% - 32px)}
 
 /* phone */
@@ -361,7 +384,7 @@ const STATUSES=["Received","Seen","Planned","Built"];
 function seed(){return {
  view:"staff",
  staff:{screen:"map",drawer:null,filter:"All",bell:false,layers:{reports:true,fixes:true},period:"this",avatar:false},
- mode:"day",hour:14,tried:new Set(),manual:{},budget:300000,modal:null,toast:null,nextId:1042,
+ mode:"day",hour:14,tried:new Set(),manual:{},budget:300000,preview:false,modal:null,toast:null,nextId:1042,
  reports:[
   {id:"R-1041",sid:"s4",kind:"hot",metoo:23,age:"2 days ago",status:"Planned",note:"No shade at all at 1pm school pick-up",src:"Owner app",mine:false,follow:true,replies:[{who:"Township team",t:"Thank you. Shade sail and a raised crossing are planned for March.",when:"Yesterday"}]},
   {id:"R-1038",sid:"s6",kind:"hot",metoo:6,age:"4 days ago",status:"Seen",note:"Bus stop roof too small, everyone waits in the sun",src:"QR sticker",replies:[]},
@@ -402,6 +425,8 @@ const shadedPct=extra=>{let a=0,b=0;S.forEach(s=>{a+=s.len*shade(s,14,extra);b+=
 const redCount=extra=>S.filter(s=>score(s,"day",14,extra)>=65).length;
 function planSet(budget=st.budget,useManual=true){let left=budget;const pick=new Set();FIXES.forEach(s=>{if(s.fix.cost<=left){pick.add(s.id);left-=s.fix.cost;}});
  if(useManual)Object.entries(st.manual).forEach(([id,on])=>{on?pick.add(id):pick.delete(id);});return pick;}
+function portfolio(budget){const pick=planSet(budget,false);let cost=0,trips=0;pick.forEach(id=>{const s=byId[id];cost+=s.fix.cost;trips+=daily(s);});return {pick,cost,trips,remaining:budget-cost};}
+function pitchStats(budget){const p=portfolio(budget);return `<div class="pitch-stats"><div><strong>${p.pick.size}</strong><span>fixes selected</span></div><div><strong>${rmFull(p.cost)}</strong><span>allocated</span></div><div><strong>${p.trips.toLocaleString()}</strong><span>estimated daily trips</span></div></div>`;}
 const openReports=()=>st.reports.filter(r=>r.status!=="Built");
 const fresh=()=>st.reports.filter(r=>r.fresh);
 const repById=id=>st.reports.find(r=>r.id===id);
@@ -469,8 +494,8 @@ function overview(){const pl=st.reports.filter(r=>r.status==="Planned").length,b
  <h3 style="margin-top:6px">Latest reports</h3>${st.reports.slice(0,3).map(r=>`<button class="rowbtn" data-report="${r.id}"><span style="display:flex;gap:8px;align-items:center">${ic(r.kind)}<span><b>${esc(byId[r.sid].name)}</b><small>${r.age} · ${r.metoo} × Me too</small></span></span>${r.fresh?`<span class="pill new">New</span>`:pill(r.status)}</button>`).join("")}</div></div>`;}
 
 function mapScreen(){
- return `<div class="mh"><div><h2>Elmina walking map</h2><p>Inspect mapped streets, trace a walk, and locate reported problems and proposed fixes.</p></div><div class="btns"><a class="btn ghost sm" href="report.html?source=qr" target="_blank" rel="noopener">Report a street</a><a class="btn ghost sm" href="map.html" target="_blank" rel="noopener">Open full map</a></div></div>
- <iframe class="real-map-frame" src="map.html?embedded=1" title="Interactive OpenStreetMap planning map of Elmina City Centre" loading="eager"></iframe><p class="note">Street geometry comes from OpenStreetMap. Priority, shade and walker figures are planning estimates until the route and inputs are field checked.</p>`;}
+ return `<div class="mh"><div><h2>${st.preview?'Jalan Elmina 3 fix preview':'Elmina walking map'}</h2><p>${st.preview?'Illustrative positions for the selected shade and crossing bundle.':'Inspect mapped streets and identify the priority walking route.'}</p></div><div class="btns">${st.preview?`<button class="btn ghost sm" data-act="back-find">Back to FIND</button>`:`<a class="btn ghost sm" href="report.html?source=qr" target="_blank" rel="noopener">Report a street</a>`}<button class="btn sm" data-act="open-budget">${st.preview?'Adjust budget':'Next: Plan fixes'}</button></div></div>
+ <iframe class="real-map-frame" src="map.html?embedded=1&hour=${st.hour}${st.preview?'&preview=s4':''}" title="Interactive OpenStreetMap planning map of Elmina City Centre" loading="eager"></iframe><p class="note">${st.preview?'Proposed markers are illustrative along nearby Jalan Elmina Ilham 3. Confirm the exact pilot route and locations on site.':'Street geometry comes from OpenStreetMap. Priority, shade and walker figures are planning estimates until the route and inputs are field checked.'}</p>`;}
 
 function plan(){const pick=planSet();let c=0,wk=0;pick.forEach(id=>{const s=byId[id];c+=s.fix.cost;wk+=daily(s);});const over=c>st.budget;
  return `<div class="mh"><div><h2>Fix plan</h2><p>Set a budget and compare the value of each proposed fix.</p></div><div class="btns"><button class="btn ghost sm" data-act="autoplan">Reset plan</button><button class="btn ghost sm" data-act="export">Export CSV</button><button class="btn sm" data-act="council">Council handoff</button></div></div>
@@ -598,6 +623,13 @@ function webScreen(){const w=st.phone.web;
 
 /* ---------- render ---------- */
 const root=document.getElementById("root");
+let fixTimer=null;
+function pitchModal(){const m=st.modal;
+ if(m.kind==='budget')return `<div class="modalwrap" data-mclose><div class="modal pitch-modal" role="dialog" aria-modal="true" aria-label="Plan fixes within budget"><span class="pitch-step">STEP 02 / FIX</span><h3>Plan fixes within budget</h3><p>Set the available budget. Teduh ranks proposed fixes by estimated daily walking trips helped per RM10,000.</p><div class="pitch-budget"><div class="pitch-budget-head"><span>Available budget</span><strong data-pitch-budget-value>${rmFull(m.budget)}</strong></div><input type="range" data-pitch-budget min="50000" max="600000" step="10000" value="${m.budget}" aria-label="Available budget"><div class="pitch-budget-scale"><span>RM50,000</span><span>RM600,000</span></div></div><div data-pitch-summary aria-live="polite">${pitchStats(m.budget)}</div><p class="note">Scenario costs and trips need site checks and local quotes.</p><div class="btns" style="justify-content:flex-end"><button class="btn ghost" data-mx>Cancel</button><button class="btn" data-confirm>Confirm budget</button></div></div></div>`;
+ if(m.kind==='calculating')return `<div class="modalwrap"><div class="modal pitch-modal" role="dialog" aria-modal="true" aria-label="Calculating fix plan"><span class="pitch-step">STEP 02 / FIX</span><h3>Calculating</h3><p>Ranking proposed fixes by estimated trips helped per RM10,000.</p><div class="pitch-progress" role="progressbar" aria-label="Preparing fix plan"><span></span></div><p class="note">Available budget: ${rmFull(m.budget)}</p></div></div>`;
+ if(m.kind==='result'){const p=portfolio(st.budget);return `<div class="modalwrap" data-mclose><div class="modal pitch-modal" role="dialog" aria-modal="true" aria-label="Recommended fix plan"><span class="pitch-step">STEP 02 / FIX</span><h3>Recommended fix plan</h3><p>Best-value combination within ${rmFull(st.budget)}, using the current planning scenario.</p>${pitchStats(st.budget)}<div class="pitch-result-list">${FIXES.filter(s=>p.pick.has(s.id)).map(s=>`<div class="pitch-result-row ${s.id==='s4'?'pilot':''}"><div><strong>${esc(s.name)}</strong><small>${esc(s.fix.label)} · ${daily(s).toLocaleString()} estimated trips/day</small></div><b>${rmFull(s.fix.cost)}</b></div>`).join('')}</div><p class="note">${rmFull(p.remaining)} remains. The Jalan Elmina 3 bundle includes 8 trees, a shade sail, and a raised crossing. Preview locations are illustrative.</p><div class="btns" style="justify-content:flex-end"><button class="btn ghost" data-act="open-budget">Adjust budget</button><button class="btn" data-confirm ${p.pick.has('s4')?'':'disabled'}>Preview on map</button></div></div></div>`;}
+ return '';
+}
 function render(){
  const keep=document.activeElement;const key=keep&&keep.dataset?Object.keys(keep.dataset)[0]:null;const selStart=keep&&keep.selectionStart;
  if(residentMap){residentMap.remove();residentMap=null;}
@@ -606,7 +638,7 @@ function render(){
  if(st.view==="staff")body=staffHTML();
  else if(st.view==="resident")body=`<div class="stage">${phoneHTML()}</div>`;
  else body=`<div class="split">${staffHTML()}<div class="stage">${phoneHTML()}</div></div>`;
- const m=st.modal?`<div class="modalwrap" data-mclose><div class="modal" role="dialog" aria-modal="true" aria-label="${esc(st.modal.title)}"><h3>${esc(st.modal.title)}</h3>${st.modal.body||""}${st.modal.copy!=null?`<textarea readonly data-copytext>${esc(st.modal.copy)}</textarea>`:""}<div class="btns" style="justify-content:flex-end">${st.modal.copy!=null?`<button class="btn" data-copy>Copy</button>`:""}${st.modal.confirm?`<button class="btn" data-confirm>${esc(st.modal.confirm)}</button>`:""}<button class="btn ghost" data-mx>Close</button></div></div></div>`:"";
+ const m=st.modal?(st.modal.kind?pitchModal():`<div class="modalwrap" data-mclose><div class="modal" role="dialog" aria-modal="true" aria-label="${esc(st.modal.title)}"><h3>${esc(st.modal.title)}</h3>${st.modal.body||""}${st.modal.copy!=null?`<textarea readonly data-copytext>${esc(st.modal.copy)}</textarea>`:""}<div class="btns" style="justify-content:flex-end">${st.modal.copy!=null?`<button class="btn" data-copy>Copy</button>`:""}${st.modal.confirm?`<button class="btn" data-confirm>${esc(st.modal.confirm)}</button>`:""}<button class="btn ghost" data-mx>Close</button></div></div></div>`):"";
  root.innerHTML=sw+body+m+(st.toast?`<div class="toast" role="status">${esc(st.toast)}</div>`:"");
  mountResidentMap();
  if(key&&["hour","budget","replytext","pnote","wnote"].includes(key)){const n=root.querySelector(`[data-${key}]`);if(n){n.focus();try{if(selStart!=null&&n.setSelectionRange)n.setSelectionRange(selStart,selStart);}catch(e){}}}
@@ -633,7 +665,7 @@ document.addEventListener("click",e=>{
  if(!el)return;const d=el.dataset;
  if(d.mclose!==undefined&&el!==t)return; // clicks inside the modal box
  if(d.view){if(d.view==="qr"){st.phone.qr=true;if(st.view==="staff")st.view="split";}else{st.view=d.view;if(d.view!=="staff"){st.phone.qr=false;if(st.phone.screen==="host")st.phone.screen="home";}}render();return;}
- if(d.reset!==undefined){st=seed();st.view="split";st.staff.screen="map";st.phone.screen="home";st.hour=12;st.budget=100000;window.scrollTo(0,0);toast("Pitch view ready");render();return;}
+ if(d.reset!==undefined){clearTimeout(fixTimer);st=seed();st.view="split";st.staff.screen="map";st.phone.screen="home";st.hour=12;st.budget=100000;window.scrollTo(0,0);toast("Pitch view ready");render();return;}
  /* staff */
  if(d.nav){st.staff.screen=d.nav;st.staff.drawer=null;st.staff.bell=false;st.staff.avatar=false;render();return;}
  if(d.bell!==undefined){st.staff.screen='reports';st.staff.bell=false;st.staff.avatar=false;render();return;}
@@ -652,6 +684,8 @@ document.addEventListener("click",e=>{
    const s=byId[r.sid];notifyResident(r,`${s.name} is now ${d.setstatus}`,d.setstatus==="Built"?"The fix is built. See the before and after.":d.setstatus==="Planned"?(s.fix?s.fix.label:"Added to the fix plan."):"The township team has seen your report.");
    if(d.setstatus==="Planned"&&s.fix)st.manual[s.id]=true;toast(r.mine||r.follow?"Status updated · resident notified":"Status updated");}render();return;}
  if(d.act){const a=d.act;
+  if(a==="open-budget"){clearTimeout(fixTimer);clearTimeout(toastTimer);st.toast=null;st.modal={kind:'budget',budget:st.budget};render();return;}
+  if(a==="back-find"){st.preview=false;render();return;}
   if(a==="reply"){const r=repById(st.staff.drawer.id);const txt=(st.staff.replyDraft||"").trim();if(!txt){toast("Write a reply first");render();return;}r.replies.push({who:"Township team",t:txt,when:"just now"});st.staff.replyDraft="";notifyResident(r,`Reply about ${byId[r.sid].name}`,txt);toast(r.mine||r.follow?"Reply sent · resident notified":"Reply sent");render();return;}
   if(a==="export"){const pick=planSet();st.modal={title:"Export fix plan (CSV)",copy:"street,fix,cost_rm,trips_per_day,value_per_rm10k\n"+FIXES.filter(s=>pick.has(s.id)).map(s=>[`"${s.name}"`,`"${s.fix.label}"`,s.fix.cost,daily(s),Math.round(value(s))].join(",")).join("\n")};render();return;}
   if(a==="council"){st.modal={title:"Council handoff",body:"<p>Export this plan for review. Council submissions require site checks and an approved process; this action does not send the plan.</p>"};render();return;}
@@ -660,10 +694,13 @@ document.addEventListener("click",e=>{
   if(a==="plancheck"){st.modal={title:"Plan check: Kulai",body:`<p>Upload a township layout (DWG, GeoJSON or PDF plan) and Teduh scores the future streets for shade and crossings before construction.</p><p class="note">Coming after the pilot.</p>`};render();return;}
   if(a==="signout"){st.staff.avatar=false;toast("Account menu closed");render();return;}
  }
- if(d.mx!==undefined||d.mclose!==undefined){st.modal=null;render();return;}
+ if(d.mx!==undefined||d.mclose!==undefined){clearTimeout(fixTimer);st.modal=null;render();return;}
  if(d.copy!==undefined){const txt=st.modal.copy;const ta=root.querySelector("[data-copytext]");const fallback=()=>{if(ta){ta.focus();ta.select();}toast("Selected. Press Ctrl or Cmd + C to copy");render();const n=root.querySelector("[data-copytext]");if(n){n.focus();n.select();}};
   try{navigator.clipboard.writeText(txt).then(()=>{toast("Copied");render();},fallback);}catch(err){fallback();}return;}
- if(d.confirm!==undefined){st.modal=null;render();return;}
+ if(d.confirm!==undefined){
+  if(st.modal?.kind==='budget'){const budget=st.modal.budget;st.budget=budget;st.manual={};st.modal={kind:'calculating',budget};render();clearTimeout(fixTimer);fixTimer=setTimeout(()=>{if(st.modal?.kind==='calculating'&&st.modal.budget===budget){st.modal={kind:'result'};render();}},1300);return;}
+  if(st.modal?.kind==='result'){st.preview=true;st.staff.screen='map';st.modal=null;render();return;}
+  st.modal=null;render();return;}
  /* phone */
  const p=st.phone;
  if(d.pgo){if(d.pgo==="kind")p.draft=null;pgo(d.pgo);render();return;}
@@ -684,7 +721,8 @@ document.addEventListener("click",e=>{
  if(d.wagain!==undefined){p.web={kind:null,photo:null,sent:false};render();return;}
 });
 document.addEventListener("input",e=>{const t=e.target;if(!t.dataset)return;
- if(t.dataset.hour!==undefined){st.hour=+t.value;render();}
+ if(t.dataset.pitchBudget!==undefined){st.modal.budget=+t.value;root.querySelector('[data-pitch-budget-value]').textContent=rmFull(st.modal.budget);root.querySelector('[data-pitch-summary]').innerHTML=pitchStats(st.modal.budget);}
+ else if(t.dataset.hour!==undefined){st.hour=+t.value;render();}
  else if(t.dataset.budget!==undefined){st.budget=+t.value;render();}
  else if(t.dataset.replytext!==undefined){st.staff.replyDraft=t.value;}
  else if(t.dataset.pnote!==undefined){st.phone.draft.note=t.value;}
@@ -695,7 +733,8 @@ document.addEventListener("change",e=>{const t=e.target;if(!t.dataset)return;
  if(t.dataset.wphoto!==undefined)readFile(t,u=>{st.phone.web.photo=u;render();});
  if(t.dataset.township!==undefined&&t.value!=="Elmina City Centre"){const v2=t.value;t.value="Elmina City Centre";st.modal={title:v2,body:v2.startsWith("Kulai")?`<p>Plan check scores a township layout before it is built. Upload a layout to start.</p><p class="note">Coming after the pilot.</p>`:`<p>${esc(v2)} is not set up in this workspace yet.</p>`};render();}
 });
-document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(st.modal)st.modal=null;else if(st.staff.drawer)st.staff.drawer=null;else{st.staff.bell=false;st.staff.avatar=false;}render();}});
+window.addEventListener('message',event=>{if(event.origin!==location.origin||event.source!==root.querySelector('.real-map-frame')?.contentWindow||event.data?.type!=='teduh-hour')return;const hour=Number(event.data.hour);if(Number.isInteger(hour)&&hour>=7&&hour<=19)st.hour=hour;});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){if(st.modal){clearTimeout(fixTimer);st.modal=null;}else if(st.staff.drawer)st.staff.drawer=null;else{st.staff.bell=false;st.staff.avatar=false;}render();}});
 render();
 refreshLiveReports();
 setInterval(refreshLiveReports,20000);

@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700;800&display=swap">
   <link rel="stylesheet" href="./vendor/leaflet.css">
   <link rel="stylesheet" href="./styles.css">
-  <script>const mapView = new URLSearchParams(location.search); if (mapView.has("embedded")) document.documentElement.classList.add("embedded"); if (mapView.has("compact")) document.documentElement.classList.add("compact");</script>
+  <script>const mapView = new URLSearchParams(location.search); if (mapView.has("embedded")) document.documentElement.classList.add("embedded"); if (mapView.has("compact")) document.documentElement.classList.add("compact"); if (mapView.get("preview") === "s4") document.documentElement.classList.add("preview");</script>
 </head>
 <body>
   <div class="app">
@@ -52,7 +52,7 @@
       <section class="map-area" aria-label="Elmina map">
         <div class="map-toolbar"><div class="map-heading"><strong>Elmina City Centre</strong><span>Walking priority by hour</span></div><label class="hour-control" for="priorityHour"><span>FIND</span><input id="priorityHour" type="range" min="7" max="19" step="1" value="12" aria-label="Hour for walking priority"><output id="priorityTime" for="priorityHour">12:00 PM</output></label><div class="map-controls"><button id="fitBtn" class="button secondary" type="button">Fit area</button><span id="saveStatus" role="status">Plan stored on this device</span></div></div>
         <div id="map" role="application" aria-label="OpenStreetMap map of Elmina City Centre with editable Teduh planning overlays"></div>
-        <div class="map-legend" aria-label="Map legend"><span><i class="legend-line priority"></i>Estimated priority</span><span><i class="legend-line walk"></i>Mapped walking link</span><span><i class="legend-line route"></i>Selected route</span><span><i class="legend-dot"></i>Proposed fix</span><span><i class="legend-dot report"></i>Resident report</span></div>
+        <div class="map-legend" aria-label="Map legend"><span><i class="legend-line priority"></i>Estimated priority</span><span><i class="legend-line walk"></i>Mapped walking link</span><span><i class="legend-line route"></i>Selected route</span><span><i class="legend-dot"></i>Proposed fix</span><span><i class="legend-dot report"></i>Resident report</span><span class="preview-key"><i class="preview-dot tree"></i>8 trees</span><span class="preview-key"><i class="preview-dot sail"></i>Shade sail</span><span class="preview-key"><i class="preview-dot crossing"></i>Raised crossing</span></div>
         <div id="mapNotice" class="map-notice" role="status">Loading mapped streets and buildings…</div>
       </section>
       <aside class="panel insights" aria-label="Plan details">
