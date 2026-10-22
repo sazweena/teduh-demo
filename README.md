@@ -29,6 +29,7 @@ This GitHub Pages site has no backend. Reports and proposed map fixes entered in
 | `report.html`, `report.js` | Coordinate-based resident report form |
 | `static-api.js` | Browser storage adapter for this static site |
 | `sdp-app.html` | Proposed owner-app integration view |
+| `assets/` | Teduh vector logo, source PNG, and visual comparison |
 | `vendor/` | Local Leaflet files and license |
 | `source-ref/` | Spoken pitch script reference |
 

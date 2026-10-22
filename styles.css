@@ -42,6 +42,7 @@ html.embedded .hour-control span{display:inline}
 @media(max-width:980px){html.embedded .workspace{grid-template-rows:minmax(0,2fr) minmax(0,3fr)}}
 @media(max-width:740px){.map-toolbar{flex-wrap:wrap;height:auto;padding:8px 10px}.hour-control{order:3;flex-basis:100%;max-width:none}.map-controls{margin-left:auto}html.embedded .map-toolbar{height:auto;min-height:72px}html.embedded .map-heading{min-width:0}}
 html.preview .hour-control{display:none}
+.brand .brand-icon{width:40px;height:40px;object-fit:contain;background:none;border-radius:0}
 html.embedded.preview .workspace{grid-template-columns:minmax(0,1fr) 210px;grid-template-rows:minmax(0,1fr)}
 html.embedded.preview .sidebar{display:none}
 html.embedded.preview .map-area{grid-column:1;grid-row:1}

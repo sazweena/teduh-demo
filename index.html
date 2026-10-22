@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <style>[hidden]{display:none!important}</style>
 <title>Teduh | Elmina pilot</title>
+<link rel="icon" href="./assets/teduh-icon.svg" type="image/svg+xml">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -62,7 +63,7 @@ button{cursor:pointer}
 .staff{display:grid;grid-template-columns:210px minmax(0,1fr);min-height:100vh;position:relative;background:var(--bg)}
 .side{background:var(--side);color:var(--side-ink);padding:16px 10px;display:flex;flex-direction:column;gap:3px}
 .logo{display:flex;align-items:center;gap:9px;padding:2px 8px 16px;font-family:var(--display);font-weight:800;font-size:20px;color:#fff}
-.logo i,.leaf{width:26px;height:26px;border-radius:9px 2px 9px 2px;background:var(--accent);display:block;flex:none}
+.logo img{width:32px;height:34px;object-fit:contain;display:block;flex:none}
 .navb{border:0;background:transparent;color:var(--side-ink);text-align:left;padding:9px 11px;border-radius:9px;font-weight:600;font-size:14px;display:flex;justify-content:space-between;align-items:center}
 .navb:hover{background:var(--side-on)}
 .navb[aria-current="true"]{background:var(--accent);color:var(--accent-ink)}
@@ -206,6 +207,7 @@ textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:9px 
 .status{display:flex;justify-content:space-between;align-items:center;padding:11px 24px 4px;font-size:12px;font-weight:700;font-family:var(--mono)}
 .pbody{flex:1;overflow-y:auto;padding:8px 16px 16px;display:flex;flex-direction:column;gap:12px}
 .pbar{display:flex;align-items:center;gap:10px;padding:4px 16px 8px}
+.pbar .teduh-mark{width:28px;height:28px;padding:3px;border-radius:8px;background:var(--side);object-fit:contain;flex:none}
 .back{border:0;background:var(--surface-2);width:32px;height:32px;border-radius:50%;font-weight:800;font-size:18px;line-height:1}
 .pbar .t{font-weight:800;font-size:16px;display:block}
 .pbar .s{font-size:11px;color:var(--muted);display:block}
@@ -222,8 +224,8 @@ textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:9px 
 .tile{border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:10px 6px;text-align:center;font-size:11.5px;font-weight:600;line-height:1.25;position:relative}
 .tile i{display:block;width:30px;height:30px;border-radius:9px;margin:0 auto 6px;background:var(--host-soft)}
 .tile.teduh{border:2px solid var(--accent);background:var(--accent-soft)}
-.tile.teduh i{background:var(--accent);position:relative}
-.tile.teduh i::after{content:"";position:absolute;inset:7px 9px 9px 7px;border-radius:9px 2px 9px 2px;background:var(--accent-ink)}
+.tile.teduh .tile-mark{display:grid;place-items:center;width:34px;height:34px;margin:0 auto 6px;border-radius:9px;background:var(--side)}
+.tile.teduh .tile-mark img{width:28px;height:28px;object-fit:contain}
 .badge{position:absolute;top:-7px;right:-5px;background:var(--hot);color:#fff;font-size:9.5px;font-weight:800;padding:1px 6px;border-radius:999px}
 .card{border:1px solid var(--line);border-radius:14px;padding:11px 12px;background:var(--surface);text-align:left;width:100%;display:block}
 button.card:hover{border-color:var(--accent)}
@@ -473,7 +475,7 @@ async function refreshLiveReports(){
 const NAV=[["overview","Overview"],["map","Map"],["plan","Fix plan"],["reports","Reports"],["impact","Impact"],["sources","Sources"]];
 function staffHTML(){const S2=st.staff;const nf=liveReports.filter(r=>r.status==='Received').length+fresh().length;
  const scr={overview,map:mapScreen,plan,reports,impact,sources}[S2.screen]();
- return `<div class="staff"><nav class="side" aria-label="Planner"><div class="logo"><i></i>Teduh</div>
+ return `<div class="staff"><nav class="side" aria-label="Planner"><div class="logo"><img src="./assets/teduh-icon.svg" width="32" height="34" alt="">Teduh</div>
  ${NAV.map(([k,l])=>`<button class="navb" data-nav="${k}" aria-current="${S2.screen===k}">${l}${k==="reports"?`<span class="cnt ${nf?"":"soft"}">${liveReports.filter(r=>r.status!=="Built").length+openReports().length}</span>`:""}</button>`).join("")}
  <div class="foot">Township planning team</div></nav>
  <div class="mainwrap"><div class="topbar"><select data-township aria-label="Township"><option>Elmina City Centre</option><option>Bandar Bukit Raja</option><option>Kulai (plan check)</option></select>
@@ -549,14 +551,14 @@ function drawerHTML(){const d=st.staff.drawer;
 
 /* ---------- phone ---------- */
 const status=(t="2:00")=>`<div class="island"></div><div class="status"><span>${t}</span><span>5G ▮▮▮</span></div>`;
-const pbar=(t,s)=>`<div class="pbar"><button class="back" data-pback aria-label="Back">‹</button><div><span class="t">${t}</span><span class="s">${s}</span></div></div>`;
+const pbar=(t,s)=>`<div class="pbar"><button class="back" data-pback aria-label="Back">‹</button>${t==='My street'?'<img class="teduh-mark" src="./assets/teduh-icon.svg" width="28" height="28" alt="">':''}<div><span class="t">${t}</span><span class="s">${s}</span></div></div>`;
 function pnav(on){const u=st.notifs.filter(n=>n.unread).length;return `<div class="pnav">${[["host","Home"],["home","My street"],["inbox","Inbox"]].map(([k,l])=>`<button data-pgo="${k}" aria-current="${on===k}"><i></i>${l}${k==="inbox"&&u?`<span class="cnt">${u}</span>`:""}</button>`).join("")}</div>`;}
 function phoneHTML(){const p=st.phone;let h;
  if(p.qr)h=webScreen();else h=({host,home:phome,kind:pkind,pin:ppin,sent:psent,mine:pmine,track:ptrack,fixed:pfixed,inbox:pinbox})[p.screen]();
  const b=p.banner&&!p.qr?`<button class="banner" data-ptrack="${p.banner.rid}"><b>${esc(p.banner.title)}</b>${esc(p.banner.body)}</button>`:"";
  return `<div class="phone"><div class="scr">${b}${h}</div></div>`;}
 function host(){return `${status("9:41")}<div class="pbody"><div class="hosthead"><small>Owner app · Good afternoon</small><b>Aina</b><div class="unit"><span>Elmina Valley 5, No. 12</span><span class="pill st-Built">Keys received</span></div></div>
- <div class="tiles">${["Billing","Construction progress","Defects","Documents","Household"].map(t=>`<button class="tile" data-ptoast="${t}"><i></i>${t}</button>`).join("")}<button class="tile teduh" data-pgo="home"><span class="badge">NEW</span><i></i>My street</button></div>
+ <div class="tiles">${["Billing","Construction progress","Defects","Documents","Household"].map(t=>`<button class="tile" data-ptoast="${t}"><i></i>${t}</button>`).join("")}<button class="tile teduh" data-pgo="home"><span class="badge">NEW</span><span class="tile-mark"><img src="./assets/teduh-icon.svg" width="28" height="28" alt=""></span>My street</button></div>
  <button class="card" data-pgo="inbox"><h4>My street: ${st.notifs.filter(n=>n.unread).length} updates</h4><p class="sm-t">${esc(st.notifs[0].title)}</p></button>
  <button class="card" data-ptoast="Defects"><h4>Defect #4471</h4><p class="sm-t">Kitchen tile · fixed 3 Oct</p></button></div>${pnav("host")}`;}
 function phome(){const p=st.phone;const mine=st.reports.filter(r=>r.mine).length;const sheet=p.sheet?byId[p.sheet]:null;
