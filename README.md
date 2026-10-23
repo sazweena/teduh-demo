@@ -6,6 +6,7 @@ Teduh helps township planners inspect walking heat, compare fixes within a budge
 
 ## Open the planning workspace
 
+- Live prototype (main link for judges): https://teduh.directionary.com.my/
 - Planner and resident views: https://sazweena.github.io/teduh-demo/
 - Full Elmina street map: https://sazweena.github.io/teduh-demo/map.html
 - Resident report form: https://sazweena.github.io/teduh-demo/report.html
