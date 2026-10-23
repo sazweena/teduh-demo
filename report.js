@@ -3,7 +3,7 @@ const labels = { hot: 'Too hot / no shade', cross: 'Unsafe crossing', dark: 'Too
 const map = L.map('map').fitBounds(bounds);
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>' }).addTo(map);
 const selection = L.layerGroup().addTo(map), reportLayer = L.layerGroup().addTo(map);
-let picked = null, kind = null, roads = [], reports = [];
+let picked = null, kind = null, roads = [], reports = [], photo = null;
 const $ = id => document.getElementById(id);
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const inArea = coordinates => coordinates[0] >= 101.495 && coordinates[0] <= 101.518 && coordinates[1] >= 3.175 && coordinates[1] <= 3.190;
@@ -33,6 +33,31 @@ document.querySelectorAll('[data-kind]').forEach(button => button.addEventListen
   $('submit').disabled = !picked;
 }));
 
+// Resize the chosen photo in the browser so it stays small enough to store.
+function readPhoto(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => {
+      const scale = Math.min(1, 900 / img.width), canvas = document.createElement('canvas');
+      canvas.width = Math.round(img.width * scale); canvas.height = Math.round(img.height * scale);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(url); resolve(canvas.toDataURL('image/jpeg', 0.7));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(Error('That file could not be read as a photo.')); };
+    img.src = url;
+  });
+}
+function setPhoto(value) {
+  photo = value; $('photoPreview').hidden = !value; $('photoClear').hidden = !value;
+  if (value) $('photoPreview').src = value; else { $('photoPreview').removeAttribute('src'); $('photo').value = ''; }
+}
+$('photo').addEventListener('change', async () => {
+  const file = $('photo').files[0]; if (!file) return;
+  try { setPhoto(await readPhoto(file)); } catch (error) { setPhoto(null); message(error.message, true); }
+});
+$('photoClear').addEventListener('click', () => setPhoto(null));
+const thumb = item => item.photo ? `<img class="thumb" src="${escapeHtml(item.photo)}" alt="Photo attached to this report">` : '';
+
 async function api(path, options = {}) {
   const response = await fetch(path, { ...options, headers: { 'Content-Type': 'application/json', ...options.headers } });
   const body = await response.json();
@@ -46,9 +71,9 @@ function render() {
     pin.bindPopup(`${escapeHtml(labels[item.kind])}<br>${escapeHtml(item.road_name)}<br>${escapeHtml(item.status)}`);
   }
   const owned = new Set(mineIds());
-  $('reports').innerHTML = reports.length ? reports.slice(0, 15).map(item => `<div class="item"><strong>${escapeHtml(labels[item.kind])}</strong><small>${escapeHtml(item.road_name || 'Elmina City Centre')} · ${escapeHtml(item.status)}</small><div class="actions"><span class="pill">${item.me_too_count} Me too</span><button class="secondary" data-agree="${item.id}">Me too</button></div></div>`).join('') : '<p>No reports yet. You can start with a place you know.</p>';
+  $('reports').innerHTML = reports.length ? reports.slice(0, 15).map(item => `<div class="item"><strong>${escapeHtml(labels[item.kind])}</strong><small>${escapeHtml(item.road_name || 'Elmina City Centre')} · ${escapeHtml(item.status)}</small>${thumb(item)}<div class="actions"><span class="pill">${item.me_too_count} Me too</span><button class="secondary" data-agree="${item.id}">Me too</button></div></div>`).join('') : '<p>No reports yet. You can start with a place you know.</p>';
   const own = reports.filter(item => owned.has(item.id));
-  $('mine').innerHTML = own.length ? own.map(item => `<div class="item"><strong>${escapeHtml(labels[item.kind])}</strong><small>${escapeHtml(item.road_name || 'Elmina City Centre')} · ${escapeHtml(item.status)}</small><p>${escapeHtml(item.reply || 'No team reply yet. Check back for status updates.')}</p></div>`).join('') : '<p>Reports submitted in this browser will appear here.</p>';
+  $('mine').innerHTML = own.length ? own.map(item => `<div class="item"><strong>${escapeHtml(labels[item.kind])}</strong><small>${escapeHtml(item.road_name || 'Elmina City Centre')} · ${escapeHtml(item.status)}</small>${thumb(item)}<p>${escapeHtml(item.reply || 'No team reply yet. Check back for status updates.')}</p></div>`).join('') : '<p>Reports submitted in this browser will appear here.</p>';
   document.querySelectorAll('[data-agree]').forEach(button => button.addEventListener('click', async () => {
     try { await api(`/api/reports/${button.dataset.agree}/me-too`, { method: 'POST' }); message('Your support was added.'); await refresh(); }
     catch (error) { message(error.message, true); }
@@ -64,8 +89,8 @@ $('submit').addEventListener('click', async () => {
   try {
     const point = L.latLng(picked[1], picked[0]);
     const source = new URLSearchParams(location.search).get('source') === 'owner' ? 'Owner app concept' : 'QR web form';
-    const body = await api('/api/reports', { method: 'POST', body: JSON.stringify({ kind, coordinates: picked, road_name: nearRoad(point), note: $('note').value, source }) });
-    saveMine(body.report.id); $('note').value = ''; message('Report saved in this browser. Its status will appear under Your reports.'); await refresh();
+    const body = await api('/api/reports', { method: 'POST', body: JSON.stringify({ kind, coordinates: picked, road_name: nearRoad(point), note: $('note').value, source, photo }) });
+    saveMine(body.report.id); $('note').value = ''; setPhoto(null); message('Report saved in this browser. Its status will appear under Your reports.'); await refresh();
   } catch (error) { message(error.message, true); }
   finally { $('submit').disabled = false; }
 });

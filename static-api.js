@@ -42,6 +42,7 @@
         const report = { id: id(), kind: body.kind, coordinates: body.coordinates,
           road_name: String(body.road_name || '').slice(0, 160), note: String(body.note || '').slice(0, 800),
           source: body.source || 'QR web form', status: 'Received', me_too_count: 0,
+          photo: typeof body.photo === 'string' && /^data:image\/(jpeg|png|webp);base64,/.test(body.photo) && body.photo.length < 400000 ? body.photo : null,
           reply: '', created_at: now, updated_at: now };
         state.reports.unshift(report); write(state); return reply({ report }, 201);
       }
