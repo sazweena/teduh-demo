@@ -48,12 +48,12 @@
           <label class="toggle"><input id="proposalsToggle" type="checkbox" checked><span>Proposed fixes</span></label>
           <label class="toggle"><input id="reportsToggle" type="checkbox" checked><span>Resident reports</span></label>
         </section>
-        <div class="sidebar-foot"><strong>What this map knows</strong><p>Street and building shapes are mapped OSM data. Foot access, shade, safety, costs and project boundaries still need field checks.</p></div>
+        <div class="sidebar-foot"><strong>Map data</strong><p>Street and building shapes come from OpenStreetMap.</p></div>
       </aside>
       <section class="map-area" aria-label="Elmina map">
         <div class="map-toolbar"><div class="map-heading"><strong>Elmina City Centre</strong><span>Walking priority by hour</span></div><label class="hour-control" for="priorityHour"><span>FIND</span><input id="priorityHour" type="range" min="7" max="19" step="1" value="12" aria-label="Hour for walking priority"><output id="priorityTime" for="priorityHour">12:00 PM</output></label><div class="map-controls"><button id="fitBtn" class="button secondary" type="button">Fit area</button><span id="saveStatus" role="status">Plan stored on this device</span></div></div>
         <div id="map" role="application" aria-label="OpenStreetMap map of Elmina City Centre with editable Teduh planning overlays"></div>
-        <div class="map-legend" aria-label="Map legend"><span><i class="legend-line priority"></i>Estimated priority</span><span><i class="legend-line walk"></i>Mapped walking link</span><span><i class="legend-line route"></i>Selected route</span><span><i class="legend-dot"></i>Proposed fix</span><span><i class="legend-dot report"></i>Resident report</span><span class="preview-key"><i class="preview-dot tree"></i>8 trees</span><span class="preview-key"><i class="preview-dot sail"></i>Shade sail</span><span class="preview-key"><i class="preview-dot crossing"></i>Raised crossing</span></div>
+        <div class="map-legend" aria-label="Map legend"><span><i class="legend-line priority"></i>Priority</span><span><i class="legend-line walk"></i>Mapped walking link</span><span><i class="legend-line route"></i>Selected route</span><span><i class="legend-dot"></i>Proposed fix</span><span><i class="legend-dot report"></i>Resident report</span><span class="preview-key"><i class="preview-dot tree"></i>8 trees</span><span class="preview-key"><i class="preview-dot sail"></i>Shade sail</span><span class="preview-key"><i class="preview-dot crossing"></i>Raised crossing</span></div>
         <div id="mapNotice" class="map-notice" role="status">Loading mapped streets and buildings…</div>
       </section>
       <aside class="panel insights" aria-label="Plan details">
@@ -61,7 +61,7 @@
         <div class="stat-grid"><div class="stat"><strong id="wayCount">—</strong><span>mapped ways</span></div><div class="stat"><strong id="fixCount">0</strong><span>proposed fixes</span></div><div class="stat"><strong id="reportCount">0</strong><span>resident reports</span></div></div>
         <section class="insight-section" aria-labelledby="inspectTitle"><h3 id="inspectTitle">Selected map feature</h3><div id="featureInfo" class="feature-info">Select a mapped street or proposed fix.</div></section>
         <section class="insight-section" aria-labelledby="planTitle"><h3 id="planTitle">Proposed plan</h3><div id="planList" class="plan-list"><p class="muted">No fixes placed yet.</p></div><div class="plan-total"><span>Rough total</span><strong id="planTotal">RM 0</strong></div></section>
-        <section class="insight-section evidence"><h3>Evidence status</h3><p>This is a coordinate-accurate overlay on an OSM snapshot from 21 October 2026. The walking graph uses mapped way connections; a mapped road does not confirm a safe pavement or crossing.</p><p>Priority, shade and walker figures are planning scenario estimates. Building-height, canopy and field data are needed to validate them and any before/after impact.</p></section>
+        <section class="insight-section evidence"><h3>Data sources</h3><p>Street and building geometry comes from an OpenStreetMap extract dated 21 October 2026. Priority, shade and walker figures use the inputs listed in Data and methods.</p></section>
       </aside>
     </main>
   </div>

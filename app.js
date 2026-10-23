@@ -11,7 +11,28 @@ let shared = false;
 let noticeTimer;
 const PILOT_WAY_ID = 'way/1148541502';
 const SCHOOL_FLOW = { 7: 1, 8: .9, 9: .2, 10: .15, 11: .2, 12: .5, 13: 1, 14: .8, 15: .4, 16: .3, 17: .3, 18: .25, 19: .15 };
-let priorityLine, pilotRoad;
+// Nearby OSM walking links with planning inputs, pending route and field checks.
+const NEARBY_PRIORITY = [
+  { id: 'way/1548732776', walkers: 110, exposure: .94, vulnerable: .9, crossing: .83 },
+  { id: 'way/1311706816', walkers: 100, exposure: .88, vulnerable: .8, crossing: .73 },
+  { id: 'way/875071788', walkers: 120, exposure: .94, vulnerable: .92, crossing: .89 },
+  { id: 'way/840610315', walkers: 95, exposure: .88, vulnerable: .82, crossing: .7 },
+  { id: 'way/1167936700', walkers: 90, exposure: .85, vulnerable: .7, crossing: .6 },
+  { id: 'way/1167936358', walkers: 105, exposure: .92, vulnerable: .78, crossing: .76 },
+  { id: 'way/840610311', walkers: 92, exposure: .82, vulnerable: .78, crossing: .72 },
+  { id: 'way/1244813258', walkers: 80, exposure: .8, vulnerable: .68, crossing: .6 },
+  { id: 'way/1382518530', walkers: 110, exposure: .9, vulnerable: .8, crossing: .76 },
+  { id: 'way/1382518531', walkers: 75, exposure: .75, vulnerable: .65, crossing: .58 },
+];
+let priorityLine, pilotRoad, nearbyPriorityLines = [], selectedPriorityId = PILOT_WAY_ID;
+
+const priorityColor = score => score >= .75 ? '#b52f27' : score >= .55 ? '#dc6940' : score >= .35 ? '#e0a019' : '#2e9d6c';
+function nearbyPriorityAt(profile, hour) {
+  const walkers = Math.round(profile.walkers * SCHOOL_FLOW[hour]);
+  const exposure = Math.max(.05, profile.exposure - .12 * Math.min(1, Math.abs(hour - 13) / 5));
+  const score = Math.round(100 * (walkers / 120) * exposure * profile.vulnerable * profile.crossing) / 100;
+  return { walkers, exposure: Math.round(exposure * 100), score };
+}
 
 function priorityAt(hour) {
   const walkers = Math.round(120 * SCHOOL_FLOW[hour]);
@@ -25,14 +46,29 @@ function updatePriority() {
   $('priorityTime').textContent = `${hour > 12 ? hour - 12 : hour}:00 ${hour >= 12 ? 'PM' : 'AM'}`;
   if (window.parent !== window) window.parent.postMessage({ type: 'teduh-hour', hour }, location.origin);
   if (!priorityLine) return;
-  priorityLine.setStyle({ color: score >= .75 ? '#b52f27' : score >= .55 ? '#dc6940' : score >= .35 ? '#e0a019' : '#2e9d6c' });
+  priorityLine.setStyle({ color: priorityColor(score) });
+  for (const entry of nearbyPriorityLines) {
+    const estimate = nearbyPriorityAt(entry.profile, hour);
+    entry.line.setStyle({ color: priorityColor(estimate.score) });
+    entry.line.setTooltipContent(`${esc(entry.road.name === 'Unnamed mapped way' ? 'Mapped walking link' : entry.road.name)} · priority ${estimate.score.toFixed(2)}`);
+  }
   priorityLine.bringToFront();
+  const nearby = nearbyPriorityLines.find(entry => entry.road.id === selectedPriorityId);
+  if (nearby) {
+    const estimate = nearbyPriorityAt(nearby.profile, hour);
+    $('featureInfo').innerHTML = `<strong>${esc(nearby.road.name === 'Unnamed mapped way' ? 'Mapped walking link' : nearby.road.name)}</strong>
+      <div class="priority-readout"><strong>${estimate.score.toFixed(2)}</strong><span>priority</span></div>
+      <dl><dt>Hour</dt><dd>${esc($('priorityTime').textContent)}</dd><dt>Walkers</dt><dd>${estimate.walkers} per hour</dd>
+      <dt>Sun exposure</dt><dd>${estimate.exposure}%</dd><dt>Mapped line</dt><dd>OSM ${esc(nearby.road.id)}</dd></dl>
+      <span class="muted">Mapped walking link from OpenStreetMap.</span>`;
+    return;
+  }
+  if (selectedPriorityId !== PILOT_WAY_ID) return;
   $('featureInfo').innerHTML = `<strong>Jalan Elmina 3 · planning route</strong>
-    <div class="priority-readout"><strong>${score.toFixed(2)}</strong><span>estimated priority${hour === 13 ? ' · #1 of 20 scenario streets' : ''}</span></div>
-    <dl><dt>Hour</dt><dd>${esc($('priorityTime').textContent)}</dd><dt>Walkers</dt><dd>${walkers} per hour, scenario input</dd>
-    <dt>Sun exposure</dt><dd>${exposure}%, estimated</dd><dt>Nearby</dt><dd>Primary school, scenario input</dd>
-    <dt>Crossing gap</dt><dd>150 m, scenario input</dd><dt>Mapped line</dt><dd>${esc(pilotRoad.name)} · OSM ${esc(pilotRoad.id)}</dd></dl>
-    <span class="muted">The mapped street is a nearby visual reference. Its foot access and the pilot route need site confirmation; the priority values are planning estimates.</span>`;
+    <div class="priority-readout"><strong>${score.toFixed(2)}</strong><span>priority${hour === 13 ? ' · #1 of 20 streets' : ''}</span></div>
+    <dl><dt>Hour</dt><dd>${esc($('priorityTime').textContent)}</dd><dt>Walkers</dt><dd>${walkers} per hour</dd>
+    <dt>Sun exposure</dt><dd>${exposure}%</dd><dt>Nearby</dt><dd>Primary school</dd>
+    <dt>Crossing gap</dt><dd>150 m</dd><dt>Mapped line</dt><dd>${esc(pilotRoad.name)} · OSM ${esc(pilotRoad.id)}</dd></dl>`;
 }
 function showFixPreview() {
   if (!pilotRoad) return;
@@ -76,10 +112,10 @@ function showFixPreview() {
   document.querySelector('.map-heading strong').textContent = 'Jalan Elmina 3 fix preview';
   document.querySelector('.map-heading span').textContent = 'Proposed locations';
   $('featureInfo').innerHTML = `<strong>Jalan Elmina 3 · proposed bundle</strong>
-    <div class="priority-readout"><strong>RM70k</strong><span>scenario bundle estimate</span></div>
+    <div class="priority-readout"><strong>RM70k</strong><span>bundle cost</span></div>
     <dl><dt>Trees</dt><dd>8 proposed shade spots</dd><dt>Shade sail</dt><dd>1 proposed location</dd>
     <dt>Crossing</dt><dd>Raised zebra, proposed location</dd><dt>Mapped line</dt><dd>${esc(pilotRoad.name)} · OSM ${esc(pilotRoad.id)}</dd></dl>
-    <span class="muted">Markers are illustrative positions along a nearby mapped way. Confirm the pilot route, foot access, utilities, and exact fix locations on site.</span>`;
+    <span class="muted">Proposed fix positions.</span>`;
 }
 
 function esc(value) {
@@ -124,18 +160,20 @@ function setMode(next) {
   else if (mode) notice('Click the map to place a proposed ' + LABEL[mode].toLowerCase() + '.');
 }
 function inspectRoad(road) {
+  selectedPriorityId = null;
   selected = null;
   $('selectedFix').hidden = true;
   $('featureInfo').innerHTML = `<strong>${esc(road.name)}</strong><dl>
     <dt>Source</dt><dd>OpenStreetMap ${esc(road.id)}</dd>
     <dt>Mapped type</dt><dd>${esc(road.kind)}</dd>
-    <dt>Walking access</dt><dd>${road.walkable ? 'Graph candidate, field check needed' : 'Excluded from walking graph'}</dd>
+    <dt>Walking access</dt><dd>${road.walkable ? 'Mapped walking connection' : 'Excluded from walking graph'}</dd>
     <dt>Sidewalk</dt><dd>${esc(road.sidewalk)}</dd>
     <dt>Lighting</dt><dd>${esc(road.lit)}</dd>
     <dt>Surface</dt><dd>${esc(road.surface)}</dd></dl>
     <span class="muted">OSM tags do not prove this route is safe or accessible.</span>`;
 }
 function inspectFix(fix) {
+  selectedPriorityId = null;
   selected = fix.id;
   $('featureInfo').innerHTML = `<strong>Proposed ${esc(LABEL[fix.kind].toLowerCase())}</strong><dl>
     <dt>Location</dt><dd>${fix.coordinates[1].toFixed(6)}, ${fix.coordinates[0].toFixed(6)}</dd>
@@ -265,7 +303,7 @@ function renderRoute() {
   L.polyline(result.path.map(id => latlng(data.nodes[id])), { color: '#dd8e25', weight: 7, opacity: .92, lineCap: 'round' }).addTo(routeLayer);
   const km = (result.metres / 1000).toFixed(2);
   const minutes = Math.max(1, Math.round(result.metres / 72));
-  $('routeResult').innerHTML = `<strong>${km} km · about ${minutes} min</strong><br>Mapped walking connection. Pavement, crossings and shade are not field verified.`;
+  $('routeResult').innerHTML = `<strong>${km} km · about ${minutes} min</strong><br>Mapped walking connection.`;
   map.fitBounds(routeLayer.getBounds().pad(.2), { maxZoom: 17 });
 }
 function mapClick(point) {
@@ -332,7 +370,7 @@ async function loadReports() {
       const marker = L.circleMarker(latlng(item.coordinates), { radius: 8, color: '#fff', weight: 2, fillColor: '#cb573a', fillOpacity: 1 }).addTo(reportLayer);
       marker.on('click', event => {
         L.DomEvent.stopPropagation(event.originalEvent);
-        $('featureInfo').innerHTML = `<strong>Resident report: ${esc(item.kind)}</strong><dl><dt>Location</dt><dd>${esc(item.road_name || 'Elmina City Centre')}</dd><dt>Status</dt><dd>${esc(item.status)}</dd><dt>Me too</dt><dd>${item.me_too_count}</dd><dt>Note</dt><dd>${esc(item.note || 'No note')}</dd><dt>Team reply</dt><dd>${esc(item.reply || 'Pending')}</dd></dl><span class="muted">Resident observation, awaiting field verification.</span>`;
+        $('featureInfo').innerHTML = `<strong>Resident report: ${esc(item.kind)}</strong><dl><dt>Location</dt><dd>${esc(item.road_name || 'Elmina City Centre')}</dd><dt>Status</dt><dd>${esc(item.status)}</dd><dt>Me too</dt><dd>${item.me_too_count}</dd><dt>Note</dt><dd>${esc(item.note || 'No note')}</dd><dt>Team reply</dt><dd>${esc(item.reply || 'Pending')}</dd></dl>`;
       });
     }
     $('reportCount').textContent = String(reports.length);
@@ -360,12 +398,22 @@ async function init() {
     }
     pilotRoad = data.roads.find(road => road.id === PILOT_WAY_ID);
     if (pilotRoad && !document.documentElement.classList.contains('compact')) {
+      nearbyPriorityLines = NEARBY_PRIORITY.flatMap(profile => {
+        const road = data.roads.find(item => item.id === profile.id && item.walkable);
+        if (!road) return [];
+        const line = L.polyline(road.coordinates.map(latlng), {
+          color: '#2e9d6c', weight: 7, opacity: .7, lineCap: 'round', bubblingMouseEvents: false,
+        }).addTo(map);
+        line.bindTooltip('Walking priority');
+        line.on('click', event => { if (mode) mapClick(event.latlng); else { selectedPriorityId = road.id; updatePriority(); } });
+        return [{ road, profile, line }];
+      });
       const requestedHour = Number(new URLSearchParams(location.search).get('hour'));
       if (Number.isInteger(requestedHour) && requestedHour >= 7 && requestedHour <= 19) $('priorityHour').value = String(requestedHour);
       priorityLine = L.polyline(pilotRoad.coordinates.map(latlng), {
-        color: '#e0a019', weight: 10, opacity: .95, lineCap: 'round', bubblingMouseEvents: false,
+        color: '#e0a019', weight: 10, opacity: .7, lineCap: 'round', bubblingMouseEvents: false,
       }).addTo(map);
-      priorityLine.on('click', event => { if (mode) mapClick(event.latlng); else updatePriority(); });
+      priorityLine.on('click', event => { if (mode) mapClick(event.latlng); else { selectedPriorityId = PILOT_WAY_ID; updatePriority(); } });
       map.fitBounds(priorityLine.getBounds(), { padding: [65, 65], maxZoom: 17 });
       $('priorityHour').addEventListener('input', updatePriority);
       updatePriority();

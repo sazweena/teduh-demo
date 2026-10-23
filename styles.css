@@ -47,6 +47,7 @@ html.embedded.preview .workspace{grid-template-columns:minmax(0,1fr) 210px;grid-
 html.embedded.preview .sidebar{display:none}
 html.embedded.preview .map-area{grid-column:1;grid-row:1}
 html.embedded.preview .insights{grid-column:2;grid-row:1;border-top:0;border-left:1px solid var(--line)}
+@media(max-width:730px){html.embedded .workspace{display:block;height:100vh}html.embedded .sidebar,html.embedded .insights{display:none}html.embedded .map-area{height:calc(100vh - 52px);min-height:0}html.embedded #map{min-height:0;height:100%}html.embedded .map-toolbar{min-height:82px}}
 html.preview .map-legend span:not(.preview-key){display:none}
 .map-legend .preview-key{display:none}
 html.preview .map-legend .preview-key{display:inline-flex;align-items:center;gap:5px}
