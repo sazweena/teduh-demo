@@ -8,6 +8,7 @@ Teduh helps township planners inspect walking heat, compare fixes within a budge
 
 - Live prototype (main link for judges), planner and resident views: https://sazweena.github.io/teduh-demo/
 - Full Elmina street map: https://sazweena.github.io/teduh-demo/map.html
+- 3D Elmina planning view: [map-3d.html](map-3d.html)
 - Resident report form: https://sazweena.github.io/teduh-demo/report.html
 - Proposed owner-app integration: https://sazweena.github.io/teduh-demo/sdp-app.html
 
@@ -17,6 +18,8 @@ Use *Reset demo* to open the planner map and resident view side by side at noon.
 
 The map uses an OpenStreetMap snapshot for actual Elmina street geometry. The colored planning route uses nearby mapped *Jalan Elmina Ilham 3* as a visual reference for the script's *Jalan Elmina 3*. Confirm the exact pilot route and walking access on site. Priority, shade, walkers, fix costs, and impact are scenario estimates, not field measurements.
 
+The 3D view uses MapLibre and OpenFreeMap vector tiles. Building extrusions use tile-provided heights derived or approximated from OpenStreetMap tags; the project's own building snapshot has footprints but no heights. Trees, sails, crossings, and lights are georeferenced representations of saved proposed fixes, not surveyed designs. The view flags saved points that overlap mapped building footprints; review those placements before using them in a plan. The 3D view reads the same browser-local proposed fixes and reports as the 2D map and refreshes while open.
+
 This GitHub Pages site has no backend. Reports and proposed map fixes entered in the separate map and report form are stored in the current browser so those pages can work together. They are not shared across devices and are not submitted to Sime Darby Property or a council. The resident phone flow inside `index.html` is also a local planning scenario. The separate private pilot can use a shared server and database.
 
 ## Files
@@ -25,6 +28,7 @@ This GitHub Pages site has no backend. Reports and proposed map fixes entered in
 | --- | --- |
 | `index.html` | Planner, budget engine, resident phone, and pitch reset |
 | `map.html`, `app.js`, `styles.css` | OSM street map, hourly FIND overlay, and proposed fixes |
+| `map-3d.html`, `map-3d.js`, `map-3d.css` | MapLibre 3D view of mapped streets and coordinate-based proposed fixes |
 | `elmina-map.json` | OSM-derived Elmina geometry snapshot |
 | `report.html`, `report.js` | Coordinate-based resident report form |
 | `static-api.js` | Browser storage adapter for this static site |

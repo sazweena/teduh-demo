@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#102c27">
+  <title>Teduh | Elmina in 3D</title>
+  <link rel="icon" href="./assets/teduh-icon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.16.0/dist/maplibre-gl.css">
+  <link rel="stylesheet" href="./map-3d.css">
+</head>
+<body>
+  <main class="scene">
+    <div id="map" aria-label="3D map of Elmina streets and proposed walking improvements"></div>
+    <header class="header">
+      <a class="brand" href="./index.html"><img src="./assets/teduh-icon.svg" width="32" height="32" alt=""><span>Teduh<small>Elmina walking plan</small></span></a>
+      <div class="header-actions"><a class="button" href="./map.html">Edit on 2D map</a><a class="button" href="./index.html">Planner</a></div>
+    </header>
+    <section class="panel" aria-labelledby="sceneTitle">
+      <p class="eyebrow">ELMINA CITY CENTRE</p>
+      <h1 id="sceneTitle">See the street plan in 3D.</h1>
+      <p class="intro">Explore mapped streets and the proposed trees, shade sails, crossings, and lights placed on them.</p>
+      <div class="controls">
+        <button id="fitArea" type="button">Fit Elmina</button>
+        <button id="fitFixes" type="button">All fixes</button>
+        <button id="resetCamera" type="button">Reset view</button>
+      </div>
+      <label class="focus-label" for="fixSelect">Focus a proposed fix</label>
+      <select id="fixSelect" aria-label="Focus a proposed fix"><option value="">Choose a fix</option></select>
+      <div class="detail" id="detail" aria-live="polite">Choose a fix or report to inspect its location.</div>
+      <label class="toggle"><input id="fixesToggle" type="checkbox" checked><span>Proposed fixes</span></label>
+      <label class="toggle"><input id="walksToggle" type="checkbox" checked><span>Mapped walking links</span></label>
+      <label class="toggle"><input id="reportsToggle" type="checkbox" checked><span>Resident reports</span></label>
+      <p class="methods">Street and building geometry: OpenStreetMap. 3D fix objects show proposed locations; their sizes and orientation are visual representations. <a href="./index.html">Open planner</a> for data and methods.</p>
+    </section>
+    <div class="status" id="status" role="status">Loading Elmina streets and 3D view…</div>
+    <div class="legend"><span><i class="dot tree"></i>Tree</span><span><i class="dot sail"></i>Shade sail</span><span><i class="dot crossing"></i>Crossing</span><span><i class="dot light"></i>Light</span></div>
+  </main>
+  <script src="./static-api.js"></script>
+  <script type="module" src="./map-3d.js"></script>
+</body>
+</html>
