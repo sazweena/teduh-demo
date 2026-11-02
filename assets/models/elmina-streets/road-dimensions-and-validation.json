@@ -1,0 +1,138 @@
+{
+  "asset": "elmina-road-straight.glb",
+  "object": "Road_Asphalt_6p10x6p00",
+  "units": "metres",
+  "up_axis": "Y",
+  "bounds_Y_up_m": [
+    [
+      -3.05,
+      0,
+      -3
+    ],
+    [
+      3.05,
+      0,
+      3
+    ]
+  ],
+  "dimensions_X_Y_Z_m": [
+    6.1,
+    0,
+    6
+  ],
+  "triangles": 2,
+  "lanes": 2,
+  "lane_width_m": 3,
+  "surface_Y_m": 0,
+  "texture_tile_longitudinal_transverse_m": [
+    6.1,
+    6
+  ],
+  "textures": {
+    "albedo": {
+      "opposite_pixel_edges_identical": true,
+      "dimensions_px": [
+        512,
+        512
+      ]
+    },
+    "normal": {
+      "opposite_pixel_edges_identical": true,
+      "dimensions_px": [
+        512,
+        512
+      ]
+    },
+    "roughness": {
+      "opposite_pixel_edges_identical": true,
+      "dimensions_px": [
+        512,
+        512
+      ]
+    }
+  },
+  "optional_dash": {
+    "file": "elmina-road-optional-centre-dash.glb",
+    "object": "Optional_CentreDash_3m",
+    "bounds_Y_up_m": [
+      [
+        -1.5,
+        0.001,
+        -0.05
+      ],
+      [
+        1.5,
+        0.001,
+        0.05
+      ]
+    ],
+    "triangles": 2
+  },
+  "fit": {
+    "road_origins_Y_up_m": [
+      [
+        6.1,
+        0,
+        -14
+      ],
+      [
+        -0.0,
+        0,
+        -14
+      ],
+      [
+        -6.1,
+        0,
+        -14
+      ],
+      [
+        -12.2,
+        0,
+        -14
+      ],
+      [
+        -18.299999999999997,
+        0,
+        -14
+      ],
+      [
+        -24.4,
+        0,
+        -14
+      ]
+    ],
+    "road_house_facing_edge_Z_m": -11,
+    "sidewalk_street_edge_Z_m": -11,
+    "horizontal_gap_m": 0,
+    "horizontal_overlap_m": 0,
+    "road_to_curb_rise_m": 0.12,
+    "road_to_vehicle_apron_lip_m": 0.02,
+    "six_unmodified_road_instances": true
+  },
+  "protected_assets_unchanged": true,
+  "protected_sha256": {
+    "C:\\Users\\User\\Documents\\Claude\\sime-darby-hackathon\\assets\\models\\elmina-house\\elmina-end.blend": "eb23f4c3bd87eb92b28fc2b522b1191b45a6e554aab9334a94b175f58b7cffeb",
+    "C:\\Users\\User\\Documents\\Claude\\sime-darby-hackathon\\assets\\models\\elmina-house\\elmina-end.glb": "95c5774d1f99b535ac277fcdd4c8a6d9b779aadf85d53522a676b312bba8d5ed",
+    "C:\\Users\\User\\Documents\\Claude\\sime-darby-hackathon\\assets\\models\\elmina-house\\elmina-intermediate.blend": "381ad58616877bed8c53cd036b4a8452470e65d180922378f84b0b44918c75d2",
+    "C:\\Users\\User\\Documents\\Claude\\sime-darby-hackathon\\assets\\models\\elmina-house\\elmina-intermediate.glb": "837e81774a003ff75326288f6eb502fdbf961559289048a251f418dda13a717b",
+    "C:\\Users\\User\\Documents\\Claude\\sime-darby-hackathon\\assets\\models\\elmina-house\\end-map-angle.png": "6d9c92d454c64d64ab155ea1b19faca9678b4ba71926906a999702013c54d503",
+    "C:\\Users\\User\\Documents\\Claude\\sime-darby-hackathon\\assets\\models\\elmina-house\\end-model-stats.json": "1f63e31d35766d0611fbcc961128891d18726be185a17118bf58a1a1f22acd1d",
+    "C:\\Users\\User\\Documents\\Claude\\sime-darby-hackathon\\assets\\models\\elmina-house\\end-pedestrian.png": "88b13a18c630b9becf7b0c03f5d88cd27f55c8c06a770476c632ae9ae33954ff",
+    "C:\\Users\\User\\Documents\\Claude\\sime-darby-hackathon\\assets\\models\\elmina-house\\five-house-row-map-angle.png": "251be3b3aa4f8329f5a068e96a364aa75a27f445953d8764fdc8cfee66b7580b",
+    "C:\\Users\\User\\Documents\\Claude\\sime-darby-hackathon\\assets\\models\\elmina-house\\five-house-row-pedestrian.png": "29328d547d1b5193e1c313e808f2ac5781f17762a995c937b605075513abf1e5",
+    "C:\\Users\\User\\Documents\\Claude\\sime-darby-hackathon\\assets\\models\\elmina-house\\five-house-row.blend": "e6b396c82cbf253d5d9d9657fd8cdb4e43570b4bec2fa26837340b8e11d1f788",
+    "C:\\Users\\User\\Documents\\Claude\\sime-darby-hackathon\\assets\\models\\elmina-house\\front-three-quarter.png": "32244e3daf26438fdea02fa21f7d5e6ec1301243e6a078c03b4ad2aae8bdcb47",
+    "C:\\Users\\User\\Documents\\Claude\\sime-darby-hackathon\\assets\\models\\elmina-house\\gate-validation.json": "4fe2dfe4869f64b9c4034be0cc3a8949aba4455719dd8ba276a9599add01e603",
+    "C:\\Users\\User\\Documents\\Claude\\sime-darby-hackathon\\assets\\models\\elmina-house\\intermediate-map-angle.png": "32244e3daf26438fdea02fa21f7d5e6ec1301243e6a078c03b4ad2aae8bdcb47",
+    "C:\\Users\\User\\Documents\\Claude\\sime-darby-hackathon\\assets\\models\\elmina-house\\intermediate-pedestrian.png": "e8669bf2d3d9312a157d910377dad8b53a972c26fbd25cee43cbbb6cacf45abc",
+    "C:\\Users\\User\\Documents\\Claude\\sime-darby-hackathon\\assets\\models\\elmina-house\\model-stats.json": "e1ec8f73310de73a5fdedcb60591d0feaf97ac5916e9109f2df11e81cf681499",
+    "C:\\Users\\User\\Documents\\Claude\\sime-darby-hackathon\\assets\\models\\elmina-house\\README.md": "bd0ec43bd53ed33cb37f45a602ab4be8c1af92ede7221d0225988763e333d0af",
+    "C:\\Users\\User\\Documents\\Claude\\sime-darby-hackathon\\assets\\models\\elmina-streets\\elmina-sidewalk-plain.blend": "de795574bb81f415b5f85f157d25b246d1fc642d44d2619c657aac6bf5997ccf",
+    "C:\\Users\\User\\Documents\\Claude\\sime-darby-hackathon\\assets\\models\\elmina-streets\\elmina-sidewalk-plain.glb": "91137047824ec6a3711778743cbf1b89d895ba0a07433f076a3a23ed1f6ede03",
+    "C:\\Users\\User\\Documents\\Claude\\sime-darby-hackathon\\assets\\models\\elmina-streets\\elmina-sidewalk-sideyard-3m.blend": "7d132d78a44ff3181a7c8dfbe17f4559ef0a2e4ef7bc154b5a037245896c0d4e",
+    "C:\\Users\\User\\Documents\\Claude\\sime-darby-hackathon\\assets\\models\\elmina-streets\\elmina-sidewalk-sideyard-3m.glb": "ce2fbd30ca743f1490412bbaad9cbae42c3a186e6e2e72a49c6d5c683e5bfe4b",
+    "C:\\Users\\User\\Documents\\Claude\\sime-darby-hackathon\\assets\\models\\elmina-streets\\elmina-sidewalk-tree-ready.blend": "7c0fa6ef256d5d472dedfcc5a034c29972c574ee09d0bbea0e10211b4361abac",
+    "C:\\Users\\User\\Documents\\Claude\\sime-darby-hackathon\\assets\\models\\elmina-streets\\elmina-sidewalk-tree-ready.glb": "8ee3d66a1bb5caeeabfa134543576de8047025b5909acb4a29b35b76b4e6bf02",
+    "C:\\Users\\User\\Documents\\Claude\\sime-darby-hackathon\\assets\\models\\elmina-streets\\five-house-sidewalk-fit.blend": "1244ba0af7776cbff16eded67e4f0c837f3af2637d099e4330c1b6372bc31835"
+  }
+}

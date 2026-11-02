@@ -1,0 +1,217 @@
+{
+  "plain": {
+    "validated": true,
+    "bounds_Y_up": [
+      [
+        -3.049999952316284,
+        0.0,
+        -3.0
+      ],
+      [
+        3.049999952316284,
+        0.20000000298023224,
+        -0.0
+      ]
+    ],
+    "triangles": 168,
+    "objects": {
+      "plain__ClearWalkEast": 12,
+      "plain__ClearWalkLink": 12,
+      "plain__ClearWalkWest": 12,
+      "plain__Curb_PedestrianService": 12,
+      "plain__Curb_ServiceEast": 12,
+      "plain__Curb_ServiceLink": 12,
+      "plain__Curb_ServiceWest": 12,
+      "plain__PedestrianApproach": 12,
+      "plain__PedestrianService": 12,
+      "plain__ServiceEast": 12,
+      "plain__ServiceLink": 12,
+      "plain__ServiceWest": 12,
+      "plain__VehicleApron": 12,
+      "plain__VehicleCrossingWalk": 12
+    },
+    "embedded_PNG_dimensions": [
+      [
+        256,
+        256
+      ],
+      [
+        256,
+        256
+      ],
+      [
+        256,
+        256
+      ],
+      [
+        256,
+        256
+      ],
+      [
+        256,
+        256
+      ],
+      [
+        256,
+        256
+      ],
+      [
+        256,
+        256
+      ],
+      [
+        256,
+        256
+      ],
+      [
+        256,
+        256
+      ]
+    ],
+    "file_bytes": 736908
+  },
+  "tree-ready": {
+    "validated": true,
+    "bounds_Y_up": [
+      [
+        -3.049999952316284,
+        0.0,
+        -3.0
+      ],
+      [
+        3.049999952316284,
+        0.20000000298023224,
+        -0.0
+      ]
+    ],
+    "triangles": 204,
+    "objects": {
+      "tree_ready__ClearWalkEast": 12,
+      "tree_ready__ClearWalkLink": 12,
+      "tree_ready__ClearWalkWest": 12,
+      "tree_ready__Curb_PedestrianService": 12,
+      "tree_ready__Curb_ServiceEast": 12,
+      "tree_ready__Curb_ServiceLink": 12,
+      "tree_ready__Curb_ServiceWest": 12,
+      "tree_ready__PedestrianApproach": 12,
+      "tree_ready__PedestrianService": 12,
+      "tree_ready__ServiceEast": 12,
+      "tree_ready__ServiceLink": 12,
+      "tree_ready__TreeWellSoil": 12,
+      "tree_ready__TreeWellSurround": 36,
+      "tree_ready__VehicleApron": 12,
+      "tree_ready__VehicleCrossingWalk": 12
+    },
+    "embedded_PNG_dimensions": [
+      [
+        256,
+        256
+      ],
+      [
+        256,
+        256
+      ],
+      [
+        256,
+        256
+      ],
+      [
+        256,
+        256
+      ],
+      [
+        256,
+        256
+      ],
+      [
+        256,
+        256
+      ],
+      [
+        256,
+        256
+      ],
+      [
+        256,
+        256
+      ],
+      [
+        256,
+        256
+      ],
+      [
+        256,
+        256
+      ],
+      [
+        256,
+        256
+      ],
+      [
+        256,
+        256
+      ]
+    ],
+    "file_bytes": 947032
+  },
+  "sideyard-3m": {
+    "validated": true,
+    "bounds_Y_up": [
+      [
+        -1.5,
+        0.0,
+        -3.0
+      ],
+      [
+        1.5,
+        0.20000000298023224,
+        -0.0
+      ]
+    ],
+    "triangles": 36,
+    "objects": {
+      "sideyard_3m__ClearWalk": 12,
+      "sideyard_3m__Curb_Service": 12,
+      "sideyard_3m__Service": 12
+    },
+    "embedded_PNG_dimensions": [
+      [
+        256,
+        256
+      ],
+      [
+        256,
+        256
+      ],
+      [
+        256,
+        256
+      ],
+      [
+        256,
+        256
+      ],
+      [
+        256,
+        256
+      ],
+      [
+        256,
+        256
+      ],
+      [
+        256,
+        256
+      ],
+      [
+        256,
+        256
+      ],
+      [
+        256,
+        256
+      ]
+    ],
+    "file_bytes": 720788
+  }
+}

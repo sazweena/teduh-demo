@@ -1,0 +1,65 @@
+{
+  "elmina-road-straight.glb": {
+    "bounds_Y_up_m": [
+      [
+        -3.049999952316284,
+        0.0,
+        -3.0
+      ],
+      [
+        3.049999952316284,
+        0.0,
+        3.0
+      ]
+    ],
+    "triangles": 2,
+    "vertices": 4,
+    "object": "Road_Asphalt_6p10x6p00",
+    "file_bytes": 908816,
+    "validated": true,
+    "embedded_textures": [
+      {
+        "size": [
+          512,
+          512
+        ],
+        "opposite_edges_identical": true
+      },
+      {
+        "size": [
+          512,
+          512
+        ],
+        "opposite_edges_identical": true
+      },
+      {
+        "size": [
+          512,
+          512
+        ],
+        "opposite_edges_identical": true
+      }
+    ]
+  },
+  "elmina-road-optional-centre-dash.glb": {
+    "bounds_Y_up_m": [
+      [
+        -1.5,
+        0.0010000000474974513,
+        -0.05000000074505806
+      ],
+      [
+        1.5,
+        0.0010000000474974513,
+        0.05000000074505806
+      ]
+    ],
+    "triangles": 2,
+    "vertices": 4,
+    "object": "Optional_CentreDash_3m",
+    "file_bytes": 1380,
+    "validated": true
+  },
+  "external_textures_seamless": true,
+  "protected_assets_unchanged": true
+}

@@ -1,0 +1,296 @@
+{
+  "assets": {
+    "plain": {
+      "dimensions_X_Y_Z_m": [
+        6.1,
+        0.2,
+        3
+      ],
+      "bounds_Y_up": [
+        [
+          -3.05,
+          0,
+          -3
+        ],
+        [
+          3.05,
+          0.2,
+          0
+        ]
+      ],
+      "triangles": 168,
+      "objects_triangles": {
+        "plain__ClearWalkWest": 12,
+        "plain__VehicleCrossingWalk": 12,
+        "plain__ClearWalkLink": 12,
+        "plain__PedestrianApproach": 12,
+        "plain__ClearWalkEast": 12,
+        "plain__ServiceWest": 12,
+        "plain__Curb_ServiceWest": 12,
+        "plain__VehicleApron": 12,
+        "plain__ServiceLink": 12,
+        "plain__Curb_ServiceLink": 12,
+        "plain__PedestrianService": 12,
+        "plain__Curb_PedestrianService": 12,
+        "plain__ServiceEast": 12,
+        "plain__Curb_ServiceEast": 12
+      },
+      "glb_bytes": 736908,
+      "tree_well_center_Y_up_m": null
+    },
+    "tree-ready": {
+      "dimensions_X_Y_Z_m": [
+        6.1,
+        0.2,
+        3
+      ],
+      "bounds_Y_up": [
+        [
+          -3.05,
+          0,
+          -3
+        ],
+        [
+          3.05,
+          0.2,
+          0
+        ]
+      ],
+      "triangles": 204,
+      "objects_triangles": {
+        "tree_ready__ClearWalkWest": 12,
+        "tree_ready__VehicleCrossingWalk": 12,
+        "tree_ready__ClearWalkLink": 12,
+        "tree_ready__PedestrianApproach": 12,
+        "tree_ready__ClearWalkEast": 12,
+        "tree_ready__TreeWellSurround": 36,
+        "tree_ready__TreeWellSoil": 12,
+        "tree_ready__Curb_ServiceWest": 12,
+        "tree_ready__VehicleApron": 12,
+        "tree_ready__ServiceLink": 12,
+        "tree_ready__Curb_ServiceLink": 12,
+        "tree_ready__PedestrianService": 12,
+        "tree_ready__Curb_PedestrianService": 12,
+        "tree_ready__ServiceEast": 12,
+        "tree_ready__Curb_ServiceEast": 12
+      },
+      "glb_bytes": 947032,
+      "tree_well_center_Y_up_m": [
+        -2.35,
+        0.025,
+        -2.4
+      ]
+    },
+    "sideyard-3m": {
+      "dimensions_X_Y_Z_m": [
+        3,
+        0.2,
+        3
+      ],
+      "bounds_Y_up": [
+        [
+          -1.5,
+          0,
+          -3
+        ],
+        [
+          1.5,
+          0.2,
+          0
+        ]
+      ],
+      "triangles": 36,
+      "objects_triangles": {
+        "sideyard_3m__ClearWalk": 12,
+        "sideyard_3m__Service": 12,
+        "sideyard_3m__Curb_Service": 12
+      },
+      "glb_bytes": 720788,
+      "tree_well_center_Y_up_m": null
+    }
+  },
+  "house_files_unchanged": true,
+  "house_sha256": {
+    "elmina-end.blend": "eb23f4c3bd87eb92b28fc2b522b1191b45a6e554aab9334a94b175f58b7cffeb",
+    "elmina-end.glb": "95c5774d1f99b535ac277fcdd4c8a6d9b779aadf85d53522a676b312bba8d5ed",
+    "elmina-intermediate.blend": "381ad58616877bed8c53cd036b4a8452470e65d180922378f84b0b44918c75d2",
+    "elmina-intermediate.glb": "837e81774a003ff75326288f6eb502fdbf961559289048a251f418dda13a717b",
+    "end-map-angle.png": "6d9c92d454c64d64ab155ea1b19faca9678b4ba71926906a999702013c54d503",
+    "end-model-stats.json": "1f63e31d35766d0611fbcc961128891d18726be185a17118bf58a1a1f22acd1d",
+    "end-pedestrian.png": "88b13a18c630b9becf7b0c03f5d88cd27f55c8c06a770476c632ae9ae33954ff",
+    "five-house-row-map-angle.png": "251be3b3aa4f8329f5a068e96a364aa75a27f445953d8764fdc8cfee66b7580b",
+    "five-house-row-pedestrian.png": "29328d547d1b5193e1c313e808f2ac5781f17762a995c937b605075513abf1e5",
+    "five-house-row.blend": "e6b396c82cbf253d5d9d9657fd8cdb4e43570b4bec2fa26837340b8e11d1f788",
+    "front-three-quarter.png": "32244e3daf26438fdea02fa21f7d5e6ec1301243e6a078c03b4ad2aae8bdcb47",
+    "gate-validation.json": "4fe2dfe4869f64b9c4034be0cc3a8949aba4455719dd8ba276a9599add01e603",
+    "intermediate-map-angle.png": "32244e3daf26438fdea02fa21f7d5e6ec1301243e6a078c03b4ad2aae8bdcb47",
+    "intermediate-pedestrian.png": "e8669bf2d3d9312a157d910377dad8b53a972c26fbd25cee43cbbb6cacf45abc",
+    "model-stats.json": "e1ec8f73310de73a5fdedcb60591d0feaf97ac5916e9109f2df11e81cf681499",
+    "README.md": "bd0ec43bd53ed33cb37f45a602ab4be8c1af92ede7221d0225988763e333d0af"
+  },
+  "gate_checks": [
+    {
+      "unit": 1,
+      "object": "VehicleGate",
+      "local_X_m": [
+        -1.65,
+        1.55
+      ]
+    },
+    {
+      "unit": 1,
+      "object": "PedestrianGate",
+      "local_X_m": [
+        1.69,
+        2.59
+      ]
+    },
+    {
+      "unit": 2,
+      "object": "VehicleGate",
+      "local_X_m": [
+        -1.65,
+        1.55
+      ]
+    },
+    {
+      "unit": 2,
+      "object": "PedestrianGate",
+      "local_X_m": [
+        1.69,
+        2.59
+      ]
+    },
+    {
+      "unit": 3,
+      "object": "VehicleGate",
+      "local_X_m": [
+        -1.65,
+        1.55
+      ]
+    },
+    {
+      "unit": 3,
+      "object": "PedestrianGate",
+      "local_X_m": [
+        1.69,
+        2.59
+      ]
+    },
+    {
+      "unit": 4,
+      "object": "VehicleGate",
+      "local_X_m": [
+        -1.65,
+        1.55
+      ]
+    },
+    {
+      "unit": 4,
+      "object": "PedestrianGate",
+      "local_X_m": [
+        1.69,
+        2.59
+      ]
+    },
+    {
+      "unit": 5,
+      "object": "VehicleGate",
+      "local_X_m": [
+        -1.65,
+        1.55
+      ]
+    },
+    {
+      "unit": 5,
+      "object": "PedestrianGate",
+      "local_X_m": [
+        1.69,
+        2.59
+      ]
+    }
+  ],
+  "row_house_origins_Y_up_m": [
+    [
+      -0.0,
+      0,
+      0
+    ],
+    [
+      -6.1,
+      0,
+      0
+    ],
+    [
+      -12.2,
+      0,
+      0
+    ],
+    [
+      -18.299999999999997,
+      0,
+      0
+    ],
+    [
+      -24.4,
+      0,
+      0
+    ]
+  ],
+  "row_sidewalk_origins_Y_up_m": [
+    [
+      -0.0,
+      0,
+      -8
+    ],
+    [
+      -6.1,
+      0,
+      -8
+    ],
+    [
+      -12.2,
+      0,
+      -8
+    ],
+    [
+      -18.299999999999997,
+      0,
+      -8
+    ],
+    [
+      -24.4,
+      0,
+      -8
+    ]
+  ],
+  "extension_origin_Y_up_m": [
+    4.55,
+    0,
+    -8
+  ],
+  "well_centres_row_Y_up_m": [
+    [
+      -2.35,
+      0.025,
+      -10.4
+    ],
+    [
+      -14.549999999999999,
+      0.025,
+      -10.4
+    ],
+    [
+      -26.75,
+      0.025,
+      -10.4
+    ]
+  ],
+  "clear_walking_width_m": 1.8,
+  "service_width_m": 1.2,
+  "walking_crossfall_percent": 2,
+  "vehicle_apron_slope_percent": 12,
+  "vehicle_apron_road_lip_m": 0.02,
+  "well_clearance_to_vehicle_crossing_m": 0.2,
+  "well_clearance_to_walking_zone_m": 0.1
+}

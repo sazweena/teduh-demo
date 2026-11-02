@@ -88,22 +88,83 @@ function makeObjectsLayer(houses) {
       sun.position.set(-80, 30, 120);
       this.scene.add(sun);
       const loader = new GLTFLoader();
+      const placementAt = coordinates => {
+        const point = maplibregl.MercatorCoordinate.fromLngLat(coordinates, 0);
+        const placement = new THREE.Group();
+        placement.rotation.z = Math.PI; // The selected terrace row faces south.
+        placement.position.set((point.x - origin.x) / scale, (origin.y - point.y) / scale, 0);
+        this.scene.add(placement);
+        return placement;
+      };
+      const addModel = (asset, placement, widthScale, depthScale = 1, x = 0, y = 0, z = 0) => {
+        const model = asset.scene.clone(true);
+        model.rotation.x = Math.PI / 2; // GLB Y-up to the map layer's Z-up coordinates.
+        model.scale.set(widthScale, 1, depthScale);
+        model.position.set(x, y, z);
+        placement.add(model);
+        return model;
+      };
       Promise.all(['end', 'intermediate'].map(type => loader.loadAsync(`./assets/models/elmina-house/elmina-${type}.glb`)))
         .then(([end, intermediate]) => {
           if (!this.renderer) return;
           for (const house of houses) {
-            const model = (house.end ? end : intermediate).scene.clone(true);
-            const point = maplibregl.MercatorCoordinate.fromLngLat(house.coordinates, 0);
-            model.rotation.x = Math.PI / 2; // GLB Y-up to the map layer's Z-up coordinates.
-            model.scale.set(house.width / 6.149, 1, house.depth / 16.175);
-            const placement = new THREE.Group();
-            placement.rotation.z = Math.PI; // These footprints face Jalan Metafasa U16/163 to the south.
-            placement.position.set((point.x - origin.x) / scale, (origin.y - point.y) / scale, 0);
-            placement.add(model);
-            this.scene.add(placement);
+            addModel(house.end ? end : intermediate, placementAt(house.coordinates),
+              house.width / 6.149, house.depth / 16.175);
           }
           currentMap.triggerRepaint();
         }).catch(error => { console.error('Elmina house models could not load:', error); });
+      Promise.all(['plain', 'tree-ready', 'sideyard-3m'].map(type =>
+        loader.loadAsync(`./assets/models/elmina-streets/elmina-sidewalk-${type}.glb`)))
+        .then(([plain, treeReady, sideyard]) => {
+          if (!this.renderer) return;
+          houses.forEach((house, index) => {
+            const placement = placementAt(house.coordinates);
+            const widthScale = house.width / 6.1;
+            addModel(index % 2 === 0 ? treeReady : plain, placement,
+              widthScale, 1, 0, 8 * house.depth / 16.175);
+            if (house.end) addModel(sideyard, placement, house.width / 6.149, 1,
+              house.width / 2 + 1.5 * house.width / 6.149, 8 * house.depth / 16.175);
+          });
+          currentMap.triggerRepaint();
+        }).catch(error => { console.error('Elmina sidewalks could not load:', error); });
+      loader.loadAsync('./assets/models/elmina-streets/elmina-road-straight.glb')
+        .then(road => {
+          if (!this.renderer) return;
+          const vergeMaterial = new THREE.MeshStandardMaterial({ color: '#a7b494', roughness: 1 });
+          const drivewayMaterial = new THREE.MeshStandardMaterial({ color: '#b4b4aa', roughness: 1 });
+          const addRoad = (placement, house, x = 0) => {
+            const model = addModel(road, placement, house.width / 6.1, 1, x, 0, .02);
+            model.traverse(part => {
+              if (!part.isMesh) return;
+              part.material = part.material.clone();
+              part.material.color.multiplyScalar(3);
+            });
+          };
+          for (const house of houses) {
+            const roadPlacement = placementAt(house.roadCoordinates);
+            addRoad(roadPlacement, house);
+            if (house.end) addRoad(roadPlacement, house, house.width);
+            const housePoint = maplibregl.MercatorCoordinate.fromLngLat(house.coordinates, 0);
+            const roadPoint = maplibregl.MercatorCoordinate.fromLngLat(house.roadCoordinates, 0);
+            const sidewalkFront = 8 * house.depth / 16.175 + 3;
+            const gap = (roadPoint.y - housePoint.y) / scale - 3 - sidewalkFront;
+            if (gap <= 0) continue;
+            const vergePlacement = placementAt(house.coordinates);
+            const verge = new THREE.Mesh(new THREE.PlaneGeometry(house.width, gap), vergeMaterial);
+            verge.position.set(0, sidewalkFront + gap / 2, .012);
+            vergePlacement.add(verge);
+            const driveway = new THREE.Mesh(new THREE.PlaneGeometry(3.2 * house.width / 6.149, gap), drivewayMaterial);
+            driveway.position.set(-.05 * house.width / 6.149, sidewalkFront + gap / 2, .018);
+            vergePlacement.add(driveway);
+            if (house.end) {
+              const yardWidth = 3 * house.width / 6.149;
+              const yardVerge = new THREE.Mesh(new THREE.PlaneGeometry(yardWidth, gap), vergeMaterial);
+              yardVerge.position.set(house.width / 2 + yardWidth / 2, sidewalkFront + gap / 2, .012);
+              vergePlacement.add(yardVerge);
+            }
+          }
+          currentMap.triggerRepaint();
+        }).catch(error => { console.error('Elmina road could not load:', error); });
       this.setItems = items => {
         for (const child of [...this.scene.children]) if (child.userData.fix) {
           this.scene.remove(child);
@@ -178,6 +239,17 @@ async function init() {
   if (!response.ok) throw Error('Elmina map data unavailable');
   const data = await response.json();
   buildings = data.buildings;
+  const featuredRoad = data.roads.find(road => road.id === 'way/910003507');
+  if (!featuredRoad) throw Error('Mapped Jalan Metafasa U16/163 unavailable');
+  const roadLatitude = longitude => {
+    const points = featuredRoad.coordinates;
+    for (let index = 1; index < points.length; index++) {
+      const [a, b] = [points[index - 1], points[index]];
+      if (longitude >= Math.min(a[0], b[0]) && longitude <= Math.max(a[0], b[0]))
+        return a[1] + (longitude - a[0]) * (b[1] - a[1]) / (b[0] - a[0]);
+    }
+    return points[0][1];
+  };
   const houses = modeledHouseIds.map((id, index) => {
     const building = buildings.find(item => item.id === id);
     if (!building) throw Error(`Mapped house ${id} unavailable`);
@@ -187,9 +259,13 @@ async function init() {
     const south = Math.min(...ring.map(point => point[1]));
     const north = Math.max(...ring.map(point => point[1]));
     const midpoint = (north + south) / 2;
-    return { end: index === 0, coordinates: [(east + west) / 2, midpoint],
+    const longitude = (east + west) / 2;
+    return { end: index === 0, coordinates: [longitude, midpoint],
       width: (east - west) * 111320 * Math.cos(midpoint * Math.PI / 180), depth: (north - south) * 111320 };
   });
+  const rowLongitude = houses.reduce((sum, house) => sum + house.coordinates[0], 0) / houses.length;
+  // Anchor the short straight strip to the mapped centerline without gaps between modules.
+  for (const house of houses) house.roadCoordinates = [house.coordinates[0], roadLatitude(rowLongitude)];
   map = new maplibregl.Map({
     container: 'map', style: 'https://tiles.openfreemap.org/styles/bright',
     center: cameraCenter, zoom: 19.2, pitch: 62, bearing: -22, maxPitch: 80,
