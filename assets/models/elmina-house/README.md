@@ -5,6 +5,32 @@ and the same house-centered ground origin. No marketing imagery is embedded.
 
 ## Deliverables
 
+### Front gates and five-house row
+
+Both `.blend` sources and GLBs now include independent `VehicleGate` (3.2 m)
+and `PedestrianGate` (0.9 m) objects, in a closed position. Each has a hinge
+pivot for later animation. Gates are 1.3 m tall, with slim vertical bars using
+the existing black powder-coated material. `FrontBoundary` contains fixed
+posts and matching frontage sections. `YardFrontBoundary` connects the end
+unit's front boundary to its existing side-yard fence without covering the lawn.
+
+- `five-house-row-pedestrian.png`: five-house row from a 1.65 m camera height.
+- `five-house-row-map-angle.png`: same row at 28 degrees above horizontal.
+- `five-house-row.blend`: editable inspection scene reimported from the updated
+  GLBs, with one end unit and four intermediate units at 6.10 m spacing.
+- `gate-validation.json`: geometry preservation, bounds, clearances and gate counts.
+
+The row contains five vehicle gates and five pedestrian gates. Main-frontage
+posts are inset to give adjacent posts 4 cm separation. Gates clear the porch
+slab by 4 cm; boundary posts rest on its top. All gate parts lie behind the
+porch's street edge, with at least 2 cm clearance to that edge and 12 cm to
+the porch-column fronts. The existing building geometry, materials, origin
+and total asset bounds are unchanged. The end unit retains its 3 m side yard.
+
+The individual renders listed below document the earlier material refinement
+and predate the gates. Use the five-house row renders for the current gated
+models. Editable sources and GLBs in the table are current.
+
 | Asset | Model | Editable source | Pedestrian view | Map view |
 | --- | --- | --- | --- | --- |
 | Intermediate | `elmina-intermediate.glb` | `elmina-intermediate.blend` | `intermediate-pedestrian.png` | `intermediate-map-angle.png` |
@@ -84,6 +110,17 @@ From the repository root in Git Bash:
 "/c/Program Files/Blender Foundation/Blender 5.2/blender.exe" --background --python-exit-code 1 --python scripts/build-elmina-house.py
 py scripts/check-elmina-models.py
 ```
+
+To update gates from the existing editable sources, without rebuilding the house:
+
+```bash
+"/c/Program Files/Blender Foundation/Blender 5.2/blender.exe" --background --python-exit-code 1 --python scripts/add-elmina-gates.py
+py scripts/check-elmina-models.py
+```
+
+The gate script replaces only its own tagged gate objects on subsequent runs.
+The original `build-elmina-house.py` regenerates the pre-gate architecture;
+run `add-elmina-gates.py` afterward if rebuilding from scratch.
 
 The Blender sources include render-only studio objects. The end-unit Blender
 source also retains a hidden intermediate collection of meshes for reference;

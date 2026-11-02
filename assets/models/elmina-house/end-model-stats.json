@@ -5,7 +5,7 @@
     "depth": 16.175,
     "height": 8.717
   },
-  "triangles": 6364,
+  "triangles": 7372,
   "materials": 10,
   "texture_sizes": "256 x 256 pixels, embedded original albedo, normal and roughness maps",
   "units": "metres",
@@ -22,5 +22,16 @@
     21.34
   ],
   "yard_width_m": 3.0,
-  "file_bytes": 1982384
+  "file_bytes": 2056600,
+  "mesh_objects": 14,
+  "gates": {
+    "vehicle_width_m": 3.2,
+    "pedestrian_width_m": 0.9,
+    "height_m": 1.3,
+    "objects": [
+      "VehicleGate",
+      "PedestrianGate"
+    ],
+    "position": "closed"
+  }
 }

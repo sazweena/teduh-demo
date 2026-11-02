@@ -1,0 +1,53 @@
+{
+  "intermediate": {
+    "original_geometry_unchanged": true,
+    "bounds_unchanged": true,
+    "bounds_blender_Z_up": [
+      [
+        -3.073411464691162,
+        -8.174999237060547,
+        0.0
+      ],
+      [
+        3.0757393836975098,
+        8.0,
+        8.716875076293945
+      ]
+    ],
+    "triangles": 4696,
+    "gate_bottom_clearance_m": 0.04,
+    "porch_column_clearance_m": 0.12,
+    "front_edge_clearance_m": 0.02,
+    "neighbor_post_clearance_at_6_1m_spacing": 0.04
+  },
+  "end": {
+    "original_geometry_unchanged": true,
+    "bounds_unchanged": true,
+    "bounds_blender_Z_up": [
+      [
+        -3.073411464691162,
+        -8.174999237060547,
+        0.0
+      ],
+      [
+        6.050000190734863,
+        8.0,
+        8.716875076293945
+      ]
+    ],
+    "triangles": 7372,
+    "gate_bottom_clearance_m": 0.04,
+    "porch_column_clearance_m": 0.12,
+    "front_edge_clearance_m": 0.02,
+    "neighbor_post_clearance_at_6_1m_spacing": 0.04
+  },
+  "row": {
+    "units": 5,
+    "end_units": 1,
+    "intermediate_units": 4,
+    "gate_objects": 10,
+    "spacing_m": 6.1,
+    "source": "Reimported exported GLBs",
+    "verified": "Each unit has separate vehicle and pedestrian gates inside its frontage"
+  }
+}
