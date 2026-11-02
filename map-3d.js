@@ -1,5 +1,6 @@
 import * as maplibregl from 'https://unpkg.com/maplibre-gl@6.16.0/dist/maplibre-gl.mjs';
-import * as THREE from 'https://unpkg.com/three@0.180.0/build/three.module.js';
+import * as THREE from 'three';
+import { GLTFLoader } from 'https://unpkg.com/three@0.180.0/examples/jsm/loaders/GLTFLoader.js';
 
 const $ = id => document.getElementById(id);
 const center = [101.50761, 3.18264];
@@ -7,6 +8,7 @@ const cameraCenter = [101.5124245, 3.176809];
 const bounds = [[101.495, 3.175], [101.518, 3.190]];
 const names = { tree: 'Tree', sail: 'Shade sail', crossing: 'Raised crossing', light: 'Street light' };
 const colors = { tree: '#287a51', sail: '#cc813d', crossing: '#b65745', light: '#416d9a' };
+const modeledHouseIds = ['way/1287603109', 'way/1287603110', 'way/1287603111', 'way/1287603113', 'way/1287603112'];
 const status = message => { $('status').textContent = message; $('status').hidden = false; };
 function showDetail(title, description) {
   const heading = document.createElement('strong');
@@ -71,7 +73,7 @@ function inBuilding(point) {
   });
 }
 
-function makeObjectsLayer() {
+function makeObjectsLayer(houses) {
   const origin = maplibregl.MercatorCoordinate.fromLngLat(center, 0);
   const scale = origin.meterInMercatorCoordinateUnits();
   return {
@@ -85,6 +87,23 @@ function makeObjectsLayer() {
       const sun = new THREE.DirectionalLight('#fff3d3', 2.5);
       sun.position.set(-80, 30, 120);
       this.scene.add(sun);
+      const loader = new GLTFLoader();
+      Promise.all(['end', 'intermediate'].map(type => loader.loadAsync(`./assets/models/elmina-house/elmina-${type}.glb`)))
+        .then(([end, intermediate]) => {
+          if (!this.renderer) return;
+          for (const house of houses) {
+            const model = (house.end ? end : intermediate).scene.clone(true);
+            const point = maplibregl.MercatorCoordinate.fromLngLat(house.coordinates, 0);
+            model.rotation.x = Math.PI / 2; // GLB Y-up to the map layer's Z-up coordinates.
+            model.scale.set(house.width / 6.149, 1, house.depth / 16.175);
+            const placement = new THREE.Group();
+            placement.rotation.z = Math.PI; // These footprints face Jalan Metafasa U16/163 to the south.
+            placement.position.set((point.x - origin.x) / scale, (origin.y - point.y) / scale, 0);
+            placement.add(model);
+            this.scene.add(placement);
+          }
+          currentMap.triggerRepaint();
+        }).catch(error => { console.error('Elmina house models could not load:', error); });
       this.setItems = items => {
         for (const child of [...this.scene.children]) if (child.userData.fix) {
           this.scene.remove(child);
@@ -112,7 +131,7 @@ function makeObjectsLayer() {
       this.renderer.resetState();
       this.renderer.render(this.scene, this.camera);
     },
-    onRemove() { this.setItems([]); this.renderer?.dispose(); },
+    onRemove() { this.setItems([]); this.renderer?.dispose(); this.renderer = null; },
   };
 }
 
@@ -159,6 +178,18 @@ async function init() {
   if (!response.ok) throw Error('Elmina map data unavailable');
   const data = await response.json();
   buildings = data.buildings;
+  const houses = modeledHouseIds.map((id, index) => {
+    const building = buildings.find(item => item.id === id);
+    if (!building) throw Error(`Mapped house ${id} unavailable`);
+    const ring = building.coordinates.slice(0, -1);
+    const west = Math.min(...ring.map(point => point[0]));
+    const east = Math.max(...ring.map(point => point[0]));
+    const south = Math.min(...ring.map(point => point[1]));
+    const north = Math.max(...ring.map(point => point[1]));
+    const midpoint = (north + south) / 2;
+    return { end: index === 0, coordinates: [(east + west) / 2, midpoint],
+      width: (east - west) * 111320 * Math.cos(midpoint * Math.PI / 180), depth: (north - south) * 111320 };
+  });
   map = new maplibregl.Map({
     container: 'map', style: 'https://tiles.openfreemap.org/styles/bright',
     center: cameraCenter, zoom: 19.2, pitch: 62, bearing: -22, maxPitch: 80,
@@ -175,17 +206,17 @@ async function init() {
     'line-color': '#287a51', 'line-width': ['interpolate', ['linear'], ['zoom'], 13, 2, 18, 6], 'line-opacity': .85,
   } });
 
-  map.addSource('openfreemap-buildings', { type: 'vector', url: 'https://tiles.openfreemap.org/planet' });
   const firstLabel = map.getStyle().layers.find(layer => layer.type === 'symbol')?.id;
-  map.addLayer({ id: 'mapped-buildings', type: 'fill-extrusion', source: 'openfreemap-buildings',
-    'source-layer': 'building', minzoom: 15, filter: ['>', ['get', 'render_height'], 0],
-    paint: { 'fill-extrusion-color': '#c5c9ba', 'fill-extrusion-height': ['get', 'render_height'],
-      'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0], 'fill-extrusion-opacity': .87 },
+  const plainBuildings = data.buildings.filter(building => !modeledHouseIds.includes(building.id))
+    .map(building => feature(building.id, { type: 'Polygon', coordinates: [building.coordinates] }));
+  map.addSource('mapped-buildings', { type: 'geojson', data: collection(plainBuildings) });
+  map.addLayer({ id: 'mapped-buildings', type: 'fill-extrusion', source: 'mapped-buildings', minzoom: 15,
+    paint: { 'fill-extrusion-color': '#c5c9ba', 'fill-extrusion-height': 5, 'fill-extrusion-opacity': .87 },
   }, firstLabel);
 
   map.addSource('fixes', { type: 'geojson', data: collection([]) });
   map.addSource('reports', { type: 'geojson', data: collection([]) });
-  objects = makeObjectsLayer();
+  objects = makeObjectsLayer(houses);
   map.addLayer(objects, firstLabel);
   map.addLayer({ id: 'fix-hit', type: 'circle', source: 'fixes', paint: {
     'circle-radius': 15, 'circle-color': '#ffffff', 'circle-opacity': .01,

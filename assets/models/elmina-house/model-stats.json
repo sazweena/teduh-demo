@@ -1,0 +1,26 @@
+{
+  "file": "elmina-intermediate.glb",
+  "dimensions_m": {
+    "width": 6.149,
+    "depth": 16.175,
+    "height": 8.717
+  },
+  "triangles": 3988,
+  "materials": 9,
+  "texture_sizes": "256 x 256 pixels, embedded original albedo, normal and roughness maps",
+  "units": "metres",
+  "up": "+Y",
+  "front": "-Z",
+  "origin": "Same house ground origin for both variants",
+  "house_body_m": [
+    6.1,
+    12.0
+  ],
+  "porch_depth_m": 4.0,
+  "lot_reference_m": [
+    6.1,
+    21.34
+  ],
+  "yard_width_m": 0,
+  "file_bytes": 1558904
+}
