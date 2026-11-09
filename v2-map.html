@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f5f4ee">
+  <title>Teduh | Elmina map</title>
+  <link rel="icon" href="./assets/teduh-icon-navbar.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.16.0/dist/maplibre-gl.css">
+  <link rel="stylesheet" href="./v2-map.css">
+</head>
+<body>
+  <main class="workspace">
+    <header class="toolbar" aria-label="Map controls">
+      <div class="brand"><img src="./assets/teduh-icon-navbar.svg" width="35" height="35" alt=""><span>Teduh</span></div>
+      <nav class="map-checkpoints" aria-label="Map checkpoints">
+        <button id="ilham-checkpoint" type="button" aria-label="Show streets around Jalan Elmina Ilham 3" disabled>Ilham area</button>
+        <button id="frekuensi-checkpoint" type="button" aria-label="Focus on Jalan Frekuensi U16/137">Frekuensi</button>
+        <button id="tilt-toggle" type="button" aria-pressed="false">2.5D view</button>
+      </nav>
+      <div class="time-control">
+        <label for="time-slider">Time of day <output id="time-output" for="time-slider">7:00 AM</output></label>
+        <div class="time-slider-row">
+          <span id="time-clock" class="time-clock" aria-hidden="true"><svg viewBox="0 0 40 40" focusable="false"><circle cx="20" cy="20" r="18"/><circle class="clock-centre" cx="20" cy="20" r="2"/><path class="clock-minute" d="M20 20V8"/><path id="clock-hour-hand" class="clock-hour" d="M20 20V11"/></svg></span>
+          <input id="time-slider" type="range" min="7" max="19" step="1" value="7" aria-label="Selected time of day">
+        </div>
+      </div>
+      <label class="sun-toggle"><input id="sun-toggle" type="checkbox" checked> Sun shadows</label>
+      <label class="satellite-toggle"><input id="satellite-toggle" type="checkbox" disabled> Satellite</label>
+    </header>
+    <section class="map-panel" aria-label="Elmina map">
+      <div id="satellite-map" aria-label="Google satellite map" hidden></div>
+      <div id="map" role="application" aria-label="Interactive map of mapped streets in Elmina City Centre"></div>
+      <aside id="street-detail" class="street-detail" aria-label="Selected street" aria-live="polite" hidden></aside>
+      <div id="priority-edge-indicators" class="priority-edge-indicators"></div>
+      <div id="map-centre-coordinates" class="map-centre-coordinates" hidden>Centre <output id="map-centre-value"></output></div>
+      <div class="priority-legend" aria-label="Street priority colour key"><strong>Street priority</strong><span><i class="priority-low"></i>Lower</span><span><i class="priority-mid"></i>Moderate</span><span><i class="priority-high"></i>Higher</span><span><i class="priority-peak"></i>Highest</span><span><i class="mapped-footpath"></i>Mapped footpath</span></div>
+      <div id="map-status" class="map-status" role="status">Loading Elmina map…</div>
+    </section>
+  </main>
+  <dialog id="budget-dialog" class="budget-dialog" aria-labelledby="budget-title">
+    <form id="budget-form" novalidate>
+      <button class="budget-close" type="button" aria-label="Close budget" data-close-budget>&times;</button>
+      <p class="budget-eyebrow">Fix planning</p>
+      <h2 id="budget-title">Set a budget</h2>
+      <p class="budget-description">Choose the available budget for this street.</p>
+      <label class="budget-label" for="budget-amount">Budget amount</label>
+      <div class="budget-input-wrap"><span>RM</span><input id="budget-amount" type="number" inputmode="numeric" min="10000" max="300000" step="1" required></div>
+      <input id="budget-slider" type="range" min="10000" max="300000" step="1000" aria-label="Budget amount">
+      <div class="budget-range"><span>RM10,000</span><span>RM300,000</span></div>
+      <p id="budget-error" class="budget-error" role="alert" hidden>Enter an amount from RM10,000 to RM300,000.</p>
+      <div class="budget-actions"><button type="button" class="budget-cancel" data-close-budget>Cancel</button><button type="submit" class="budget-save">Proceed</button></div>
+    </form>
+  </dialog>
+  <div id="budget-process" class="budget-process" role="dialog" aria-modal="true" aria-labelledby="budget-process-title" hidden>
+    <canvas id="budget-process-canvas" class="budget-process-canvas" aria-hidden="true"></canvas>
+    <div class="budget-process-content">
+      <p class="budget-process-eyebrow">Fix planning</p>
+      <h2 id="budget-process-title">Preparing your budget</h2>
+      <p id="budget-process-description">RM50,000 available for fix planning</p>
+      <div id="budget-process-progress" class="budget-process-progress" role="progressbar" aria-label="Animation progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span></span></div>
+      <div class="budget-process-footer"><span id="budget-process-percent">0%</span><button id="budget-process-action" type="button">Skip animation</button></div>
+    </div>
+  </div>
+  <section id="budget-result" class="budget-result" role="dialog" aria-modal="true" aria-labelledby="budget-result-title" hidden>
+    <div class="budget-result-shell">
+      <header class="budget-result-header">
+        <div><p class="budget-result-kicker">Street improvement plan</p><h2 id="budget-result-title">Recommended changes</h2><p id="budget-result-street"></p></div>
+        <button id="budget-result-close" type="button" aria-label="Close plan">&times;</button>
+      </header>
+      <div class="budget-result-body">
+        <div class="budget-result-main">
+          <div class="budget-result-summary"><div><span>Available budget</span><strong id="budget-result-budget"></strong></div><div><span>Included works</span><strong id="budget-result-cost"></strong></div><div><span>Still available</span><strong id="budget-result-remaining"></strong></div></div>
+          <p id="budget-result-message" class="budget-result-message"></p>
+          <h3>Works for this street</h3>
+          <div id="budget-result-items" class="budget-result-items"></div>
+          <details id="budget-result-tree-details" class="budget-result-tree-details">
+            <summary id="budget-result-tree-heading">Tree planting mix <span>8 trees</span></summary>
+            <div class="budget-result-tree-content">
+              <p class="budget-result-intro">Eight standard nursery trees: 2–3 m overall height, 1.5–1.8 m clear trunk and a 500 × 300 mm root ball under the published standard-tree specification. Species and exact positions need a verge and utility check.</p>
+              <div id="budget-result-trees" class="budget-result-trees"></div>
+            </div>
+          </details>
+        </div>
+      </div>
+      <footer class="budget-result-footer"><span id="budget-result-preview-error" role="status" hidden></span><div><button id="budget-result-adjust" type="button">Adjust budget</button><button id="budget-result-map" type="button">Back to map</button><button id="budget-result-preview" type="button" hidden>Preview changes in 3D</button></div></footer>
+    </div>
+  </section>
+  <script type="module" src="./v2-map.js"></script>
+</body>
+</html>

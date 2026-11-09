@@ -1,27 +1,29 @@
 import * as maplibregl from 'https://unpkg.com/maplibre-gl@6.16.0/dist/maplibre-gl.mjs';
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://unpkg.com/three@0.180.0/examples/jsm/loaders/GLTFLoader.js';
+import { planForBudget } from './v2-street-plan.mjs';
+import { frekuensiRoofs } from './v2-roofs.mjs';
+import { createAreaHouses } from './v2-houses.mjs';
 
 const $ = id => document.getElementById(id);
 const center = [101.50761, 3.18264];
-const cameraCenter = [101.5124245, 3.176809];
-const bounds = [[101.495, 3.175], [101.518, 3.190]];
+const previewMode = new URLSearchParams(location.search).get('preview') === 'ilham3';
+const requestedBudget = Number(new URLSearchParams(location.search).get('budget'));
+const previewBudget = Number.isFinite(requestedBudget) && requestedBudget >= 10000 && requestedBudget <= 300000 ? requestedBudget : 70000;
+const previewHousePosition = [101.51837, 3.18566];
+const cameraCenter = previewMode ? previewHousePosition : [101.5124245, 3.176809];
 const names = { tree: 'Tree', sail: 'Shade sail', crossing: 'Raised crossing', light: 'Street light' };
 const colors = { tree: '#287a51', sail: '#cc813d', crossing: '#b65745', light: '#416d9a' };
 const modeledHouseIds = ['way/1287603109', 'way/1287603110', 'way/1287603111', 'way/1287603113', 'way/1287603112'];
+const frekuensiBuildingIds = new Set(Array.from({ length: 16 }, (_, index) => `way/${912252060 + index}`));
 const status = message => { $('status').textContent = message; $('status').hidden = false; };
-function showDetail(title, description) {
-  const heading = document.createElement('strong');
-  const text = document.createElement('span');
-  heading.textContent = title;
-  text.textContent = description;
-  $('detail').replaceChildren(heading, text);
-}
+function showDetail(title, description) { status(`${title}: ${description}`); }
 const collection = features => ({ type: 'FeatureCollection', features });
 const feature = (id, geometry, properties = {}) => ({ type: 'Feature', id, geometry, properties });
 let proposals = [];
 let reports = [];
 let buildings = [];
+let previewRoad;
 let map;
 let objects;
 
@@ -208,20 +210,30 @@ function renderRecords() {
     { type: 'Point', coordinates: item.coordinates }, { kind: item.kind, status: item.status || 'proposed' }))));
   map.getSource('reports').setData(collection(reports.filter(item => Array.isArray(item.coordinates)).map(item => feature(item.id,
     { type: 'Point', coordinates: item.coordinates }, { kind: item.kind, status: item.status, road: item.road_name || 'Elmina City Centre' }))));
-  objects?.setItems($('fixesToggle').checked ? proposals : []);
-  $('fitFixes').disabled = points.length === 0;
-  const selected = $('fixSelect').value;
-  $('fixSelect').replaceChildren(new Option('Choose a fix', ''), ...points.map((item, index) =>
-    new Option(`${index + 1}. ${names[item.kind]}${inBuilding(item.coordinates) ? ' · check location' : ''}`, item.id)));
-  if (points.some(item => item.id === selected)) $('fixSelect').value = selected;
-  const conflicts = points.filter(item => inBuilding(item.coordinates)).length;
-  $('detail').textContent = points.length === 0
-    ? 'No fixes saved here yet. Use the 2D map to place a proposed fix.'
-    : conflicts ? `${conflicts} saved fix locations overlap mapped building footprints. Check them on the 2D map.`
-      : 'Choose a fix or report to inspect its location.';
+  objects?.setItems(proposals);
 }
 
 async function refreshRecords() {
+  if (previewMode) {
+    const included = new Set(planForBudget(previewBudget).included.map(item => item.id));
+    const start = previewRoad.coordinates[0], end = previewRoad.coordinates.at(-1);
+    const along = (fraction, north = 0) => [
+      start[0] + (end[0] - start[0]) * fraction,
+      start[1] + (end[1] - start[1]) * fraction + north,
+    ];
+    proposals = [
+      ...Array.from({ length: included.has('trees') ? 8 : 0 }, (_, index) => ({
+        id: `preview-tree-${index}`, kind: 'tree', status: 'proposed',
+        coordinates: along((index + 1) / 9, .00007),
+      })),
+      ...(included.has('sail') ? [{ id: 'preview-sail', kind: 'sail', status: 'proposed', coordinates: along(.42, .00007) }] : []),
+      ...(included.has('crossing') ? [{ id: 'preview-crossing', kind: 'crossing', status: 'proposed', coordinates: along(.65) }] : []),
+    ];
+    reports = [];
+    renderRecords();
+    $('status').hidden = true;
+    return;
+  }
   try {
     const [fixData, reportData] = await Promise.all([api('/api/proposals'), api('/api/reports')]);
     proposals = fixData.proposals;
@@ -235,10 +247,40 @@ async function refreshRecords() {
 }
 
 async function init() {
-  const response = await fetch('./elmina-map.json');
-  if (!response.ok) throw Error('Elmina map data unavailable');
-  const data = await response.json();
+  const [response, areaResponse] = await Promise.all([
+    fetch('./elmina-map.json'), fetch('./v2-ilham-roads.json'),
+  ]);
+  if (!response.ok || !areaResponse.ok) throw Error('Elmina map data unavailable');
+  const [data, areaData] = await Promise.all([response.json(), areaResponse.json()]);
   buildings = data.buildings;
+  const frekuensiBlocks = buildings.filter(building => frekuensiBuildingIds.has(building.id));
+  const mappedRoofs = [
+    ...buildings.filter(building => !frekuensiBuildingIds.has(building.id)),
+    ...frekuensiRoofs(frekuensiBlocks),
+  ];
+  const areaHouses = createAreaHouses(areaData.roads, mappedRoofs).filter(house => {
+    if (modeledHouseIds.some(id => house.id === id || house.id.startsWith(`${id}/`))) return false;
+    if (!previewMode) return true;
+    const corners = house.coordinates.slice(0, -1);
+    const midpoint = [corners.reduce((sum, point) => sum + point[0], 0) / corners.length,
+      corners.reduce((sum, point) => sum + point[1], 0) / corners.length];
+    // Keep the modeled preview house clear of the approximate terrace units.
+    return Math.hypot((midpoint[0] - previewHousePosition[0]) * 111170,
+      (midpoint[1] - previewHousePosition[1]) * 110574) >= 9;
+  });
+  if (previewMode) {
+    previewRoad = data.roads.find(road => road.name === 'Jalan Elmina Ilham 3');
+    if (!previewRoad) throw Error('Jalan Elmina Ilham 3 is unavailable');
+    $('returnToV2').hidden = false;
+    document.querySelectorAll('.legacy-action').forEach(link => { link.hidden = true; });
+    $('returnToV2').addEventListener('click', event => {
+      if (document.referrer && new URL(document.referrer).origin === location.origin &&
+          new URL(document.referrer).pathname.endsWith('/v2-map.html')) {
+        event.preventDefault();
+        history.back();
+      }
+    });
+  }
   const featuredRoad = data.roads.find(road => road.id === 'way/910003507');
   if (!featuredRoad) throw Error('Mapped Jalan Metafasa U16/163 unavailable');
   const roadLatitude = longitude => {
@@ -250,7 +292,8 @@ async function init() {
     }
     return points[0][1];
   };
-  const houses = modeledHouseIds.map((id, index) => {
+  const houses = previewMode ? [{ end: false, coordinates: previewHousePosition,
+    width: 6.149, depth: 16.175, roadCoordinates: [previewHousePosition[0], 3.18550] }] : modeledHouseIds.map((id, index) => {
     const building = buildings.find(item => item.id === id);
     if (!building) throw Error(`Mapped house ${id} unavailable`);
     const ring = building.coordinates.slice(0, -1);
@@ -265,10 +308,13 @@ async function init() {
   });
   const rowLongitude = houses.reduce((sum, house) => sum + house.coordinates[0], 0) / houses.length;
   // Anchor the short straight strip to the mapped centerline without gaps between modules.
-  for (const house of houses) house.roadCoordinates = [house.coordinates[0], roadLatitude(rowLongitude)];
+  if (!previewMode) {
+    for (const house of houses) house.roadCoordinates = [house.coordinates[0], roadLatitude(rowLongitude)];
+  }
   map = new maplibregl.Map({
     container: 'map', style: 'https://tiles.openfreemap.org/styles/bright',
-    center: cameraCenter, zoom: 19.2, pitch: 62, bearing: -22, maxPitch: 80,
+    center: cameraCenter, zoom: previewMode ? 19.7 : 19.2,
+    pitch: previewMode ? 0 : 62, bearing: previewMode ? 0 : -22, maxPitch: 80,
     canvasContextAttributes: { antialias: true },
   });
   map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'bottom-right');
@@ -283,11 +329,19 @@ async function init() {
   } });
 
   const firstLabel = map.getStyle().layers.find(layer => layer.type === 'symbol')?.id;
-  const plainBuildings = data.buildings.filter(building => !modeledHouseIds.includes(building.id))
+  const areaMappedIds = new Set(areaHouses.filter(house => house.kind === 'mapped')
+    .map(house => house.id.split('/home-')[0].replace(/\/roof$/, '')));
+  const plainBuildings = data.buildings.filter(building =>
+    !modeledHouseIds.includes(building.id) && !areaMappedIds.has(building.id))
     .map(building => feature(building.id, { type: 'Polygon', coordinates: [building.coordinates] }));
   map.addSource('mapped-buildings', { type: 'geojson', data: collection(plainBuildings) });
   map.addLayer({ id: 'mapped-buildings', type: 'fill-extrusion', source: 'mapped-buildings', minzoom: 15,
     paint: { 'fill-extrusion-color': '#c5c9ba', 'fill-extrusion-height': 5, 'fill-extrusion-opacity': .87 },
+  }, firstLabel);
+  map.addSource('ilham-houses', { type: 'geojson', data: collection(areaHouses.map(house =>
+    feature(house.id, { type: 'Polygon', coordinates: [house.coordinates] }))) });
+  map.addLayer({ id: 'ilham-houses', type: 'fill-extrusion', source: 'ilham-houses', minzoom: 15,
+    paint: { 'fill-extrusion-color': '#c5c9ba', 'fill-extrusion-height': 6, 'fill-extrusion-opacity': .93 },
   }, firstLabel);
 
   map.addSource('fixes', { type: 'geojson', data: collection([]) });
@@ -315,31 +369,15 @@ async function init() {
     map.on('mouseenter', id, () => { map.getCanvas().style.cursor = 'pointer'; });
     map.on('mouseleave', id, () => { map.getCanvas().style.cursor = ''; });
   }
-  $('fitArea').onclick = () => map.fitBounds(bounds, { padding: 60, maxZoom: 16.5 });
-  $('fitFixes').onclick = () => {
-    const positions = proposals.filter(item => names[item.kind]).map(item => item.coordinates);
-    if (positions.length) map.fitBounds(positions.reduce((box, point) => box.extend(point),
-      new maplibregl.LngLatBounds(positions[0], positions[0])), { padding: 90, maxZoom: 17.5 });
-  };
-  $('fixSelect').onchange = event => {
-    const item = proposals.find(fix => fix.id === event.target.value);
-    if (!item) return;
-    map.easeTo({ center: item.coordinates, zoom: 20, pitch: 65,
-      duration: matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 650 });
-    showDetail(names[item.kind], inBuilding(item.coordinates) ? 'Location overlaps a mapped building footprint. Check placement on the 2D map.'
-      : `${item.status || 'Proposed'} · ${Number(item.coordinates[1]).toFixed(5)}, ${Number(item.coordinates[0]).toFixed(5)}`);
-  };
-  $('resetCamera').onclick = () => map.easeTo({ center: cameraCenter, zoom: 19.2, pitch: 62, bearing: -22 });
-  $('fixesToggle').onchange = event => {
-    map.setLayoutProperty('fix-hit', 'visibility', event.target.checked ? 'visible' : 'none');
-    objects.setItems(event.target.checked ? proposals : []);
-  };
-  $('walksToggle').onchange = event => map.setLayoutProperty('walks', 'visibility', event.target.checked ? 'visible' : 'none');
-  $('reportsToggle').onchange = event => map.setLayoutProperty('report-points', 'visibility', event.target.checked ? 'visible' : 'none');
   await refreshRecords();
-  window.addEventListener('storage', event => { if (event.key === 'teduh-team-local-v1') refreshRecords(); });
-  window.addEventListener('focus', refreshRecords);
-  setInterval(refreshRecords, 20_000);
+  if (previewMode) {
+    map.easeTo({ pitch: 62, bearing: -24,
+      duration: matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 850 });
+  } else {
+    window.addEventListener('storage', event => { if (event.key === 'teduh-team-local-v1') refreshRecords(); });
+    window.addEventListener('focus', refreshRecords);
+    setInterval(refreshRecords, 20_000);
+  }
 }
 
 init().catch(error => { console.error(error); status('3D view unavailable. Check your connection or use the 2D map.'); });

@@ -20,7 +20,7 @@ function nearRoad(point) {
 }
 function pick(point) {
   const coordinates = [Number(point.lng.toFixed(7)), Number(point.lat.toFixed(7))];
-  if (!inArea(coordinates)) { message('Choose a location inside the Elmina pilot area.', true); return; }
+  if (!inArea(coordinates)) { message('Choose a location inside Elmina City Centre.', true); return; }
   picked = coordinates; selection.clearLayers();
   L.circleMarker([coordinates[1], coordinates[0]], { radius: 9, color: '#fff', weight: 3, fillColor: '#d2412a', fillOpacity: 1 }).addTo(selection);
   $('chosen').textContent = `${nearRoad(point)} · ${coordinates[1].toFixed(6)}, ${coordinates[0].toFixed(6)}`;

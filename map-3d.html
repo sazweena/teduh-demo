@@ -18,25 +18,8 @@
     <div id="map" aria-label="3D map of Elmina streets and proposed walking improvements"></div>
     <header class="header">
       <a class="brand" href="./index.html"><img src="./assets/teduh-icon.svg" width="32" height="32" alt=""><span>Teduh<small>Elmina walking plan</small></span></a>
-      <div class="header-actions"><a class="button" href="./map.html">Edit on 2D map</a><a class="button" href="./index.html">Planner</a></div>
+      <div class="header-actions"><a id="returnToV2" class="button" href="./v2-map.html" hidden>Back to map</a><a class="button legacy-action" href="./map.html">Edit on 2D map</a><a class="button legacy-action" href="./index.html">Planner</a></div>
     </header>
-    <section class="panel" aria-labelledby="sceneTitle">
-      <p class="eyebrow">ELMINA CITY CENTRE</p>
-      <h1 id="sceneTitle">See the street plan in 3D.</h1>
-      <p class="intro">Explore mapped streets, terrace homes, and the proposed trees, shade sails, crossings, and lights placed on them.</p>
-      <div class="controls">
-        <button id="fitArea" type="button">Fit Elmina</button>
-        <button id="fitFixes" type="button">All fixes</button>
-        <button id="resetCamera" type="button">Reset view</button>
-      </div>
-      <label class="focus-label" for="fixSelect">Focus a proposed fix</label>
-      <select id="fixSelect" aria-label="Focus a proposed fix"><option value="">Choose a fix</option></select>
-      <div class="detail" id="detail" aria-live="polite">Choose a fix or report to inspect its location.</div>
-      <label class="toggle"><input id="fixesToggle" type="checkbox" checked><span>Proposed fixes</span></label>
-      <label class="toggle"><input id="walksToggle" type="checkbox" checked><span>Mapped walking links</span></label>
-      <label class="toggle"><input id="reportsToggle" type="checkbox" checked><span>Resident reports</span></label>
-      <p class="methods">Street and building geometry: OpenStreetMap. Selected homes, sidewalks, road surface, and verge are visual models; their widths and placements are not surveyed. 3D fix objects show proposed locations. <a href="./index.html">Open planner</a> for data and methods.</p>
-    </section>
     <div class="status" id="status" role="status">Loading Elmina streets and 3D view…</div>
     <div class="legend"><span><i class="dot tree"></i>Tree</span><span><i class="dot sail"></i>Shade sail</span><span><i class="dot crossing"></i>Crossing</span><span><i class="dot light"></i>Light</span></div>
   </main>

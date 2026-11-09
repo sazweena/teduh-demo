@@ -203,7 +203,7 @@ function renderProposals() {
     marker.on('dragend', async () => {
       const p = marker.getLatLng();
       const next = [Number(p.lng.toFixed(7)), Number(p.lat.toFixed(7))];
-      if (!inArea(next)) { notice('Keep proposed fixes inside the Elmina pilot area.'); renderProposals(); return; }
+      if (!inArea(next)) { notice('Keep proposed fixes inside Elmina City Centre.'); renderProposals(); return; }
       if (shared) {
         try { await request(`/api/proposals/${fix.id}`, { method: 'PATCH', body: JSON.stringify({ coordinates: next }) }); }
         catch (error) { notice('Could not move proposal: ' + error.message); renderProposals(); return; }
@@ -220,7 +220,7 @@ function renderProposals() {
 }
 async function addFix(point) {
   const coordinates = [Number(point.lng.toFixed(7)), Number(point.lat.toFixed(7))];
-  if (!inArea(coordinates)) { notice('Choose a location inside the Elmina pilot area.'); return; }
+  if (!inArea(coordinates)) { notice('Choose a location inside Elmina City Centre.'); return; }
   let fix = { id: `fix-${nextId++}`, kind: mode, coordinates };
   if (shared) {
     try { fix = (await request('/api/proposals', { method: 'POST', body: JSON.stringify({ kind: fix.kind, coordinates }) })).proposal; }
