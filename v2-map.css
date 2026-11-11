@@ -154,7 +154,7 @@ input[type=range]{display:block;width:100%;height:16px;margin:4px 0 1px;accent-c
 .maplibregl-ctrl-bottom-right{bottom:8px;right:8px}
 .map-checkpoints button[aria-pressed="true"]{background:#d5e8db;border-color:#7eaa94}
 .workspace-nav{display:flex;align-items:center;gap:6px;flex:none}
-.workspace-nav button{min-height:40px;padding:8px 11px;border:1px solid #cbd8cf;border-radius:8px;background:#fff;color:#173029;font-size:12px;font-weight:700;white-space:nowrap}
+.workspace-nav :is(button,a){display:inline-flex;align-items:center;min-height:40px;padding:8px 11px;border:1px solid #cbd8cf;border-radius:8px;background:#fff;color:#173029;font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap}
 .workspace-nav button[aria-pressed="true"]{border-color:#7eaa94;background:#d5e8db}
 .workspace-nav span{margin-left:4px;color:#52665b;font-variant-numeric:tabular-nums}
 .workspace-panel{position:absolute;z-index:503;top:0;right:0;bottom:0;display:flex;flex-direction:column;width:min(380px,calc(100% - 72px));background:#f5f4ee;box-shadow:-8px 0 24px rgba(22,47,38,.16);color:#173029}
