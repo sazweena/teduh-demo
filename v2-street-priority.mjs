@@ -7,6 +7,14 @@ const hourWeight = {
   14: .76, 15: .7, 16: .62, 17: .53, 18: .42, 19: .3,
 };
 
+// Relative walking patterns for the three featured routes. These are planning
+// inputs so the hourly comparison can reflect different route use patterns.
+const routeHourWeight = {
+  'Jalan Elmina Ilham 3': { 8: .32, 9: .42, 10: .55, 11: .68, 12: .82, 13: 1, 14: .8, 15: .7, 16: .56, 17: .4, 18: .28 },
+  'Jalan Frekuensi U16/113': { 8: .85, 9: .72, 10: .58, 11: .5, 12: .48, 13: .5, 14: .52, 15: .6, 16: .72, 17: .88, 18: .9 },
+  'Jalan Frekuensi U16/120': { 8: .95, 9: .78, 10: .65, 11: .58, 12: .55, 13: .55, 14: .58, 15: .66, 16: .74, 17: .86, 18: .8 },
+};
+
 const streetWeight = {
   'Jalan Elmina Ilham 3': .96,
   'Jalan Elmina Ilham 2': .72,
@@ -80,7 +88,7 @@ export function priorityFactors(road, hour) {
   const isIlham3 = road.name === 'Jalan Elmina Ilham 3';
   const commonFactor = Math.pow(base, .25);
   const peakWalkers = isIlham3 ? 120 : Math.round(120 * commonFactor);
-  const walkerCount = Math.round(peakWalkers * (hourWeight[hour] ?? hourWeight[13]));
+  const walkerCount = Math.round(peakWalkers * (routeHourWeight[road.name]?.[hour] ?? hourWeight[hour] ?? hourWeight[13]));
   const daylightFactor = hour <= 7 || hour >= 19 ? 0 : Math.sin(Math.PI * (hour - 7) / 12);
   return {
     walkers: walkerCount / 120,

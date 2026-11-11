@@ -44,7 +44,13 @@
       </aside>
       <div id="priority-edge-indicators" class="priority-edge-indicators"></div>
       <div id="map-centre-coordinates" class="map-centre-coordinates" hidden>Centre <output id="map-centre-value"></output></div>
-      <div class="priority-legend" aria-label="Street priority colour key"><strong>Street priority</strong><span><i class="priority-low"></i>Lower</span><span><i class="priority-mid"></i>Moderate</span><span><i class="priority-high"></i>Higher</span><span><i class="priority-peak"></i>Highest</span><span><i class="mapped-footpath"></i>Mapped footpath</span></div>
+      <div class="map-overlay-stack">
+        <section class="priority-ranking" aria-labelledby="priority-ranking-title">
+          <div class="priority-ranking-head"><h2 id="priority-ranking-title">Street priority</h2><output id="priority-ranking-time">12:00 PM</output></div>
+          <ol id="priority-ranking-list" class="priority-ranking-list"><li class="priority-ranking-loading">Loading street priorities…</li></ol>
+        </section>
+        <div class="priority-legend" aria-label="Street priority colour key"><strong>Street priority</strong><span><i class="priority-low"></i>Lower</span><span><i class="priority-mid"></i>Moderate</span><span><i class="priority-high"></i>Higher</span><span><i class="priority-peak"></i>Highest</span><span><i class="mapped-footpath"></i>Mapped footpath</span></div>
+      </div>
       <div id="map-status" class="map-status" role="status">Loading Elmina map…</div>
     </section>
   </main>
@@ -64,6 +70,7 @@
   </dialog>
   <div id="budget-process" class="budget-process" role="dialog" aria-modal="true" aria-labelledby="budget-process-title" hidden>
     <canvas id="budget-process-canvas" class="budget-process-canvas" aria-hidden="true"></canvas>
+    <div id="budget-plan-count" class="budget-plan-count" hidden aria-live="polite"><strong id="budget-plan-count-number">0</strong><span>plan options</span></div>
     <div class="budget-process-content">
       <p class="budget-process-eyebrow">Fix planning</p>
       <h2 id="budget-process-title">Preparing your budget</h2>
@@ -75,19 +82,20 @@
   <section id="budget-result" class="budget-result" role="dialog" aria-modal="true" aria-labelledby="budget-result-title" hidden>
     <div class="budget-result-shell">
       <header class="budget-result-header">
-        <div><p class="budget-result-kicker">Street improvement plan</p><h2 id="budget-result-title">Recommended changes</h2><p id="budget-result-street"></p></div>
+        <div><p class="budget-result-kicker">Street improvement plan</p><h2 id="budget-result-title">3 proposed plans</h2><p id="budget-result-street"></p></div>
         <button id="budget-result-close" type="button" aria-label="Close plan">&times;</button>
       </header>
       <div class="budget-result-body">
         <div class="budget-result-main">
+          <div id="budget-plan-options" class="budget-plan-options" aria-label="Compare street improvement plans"></div>
           <div class="budget-result-summary"><div><span>Available budget</span><strong id="budget-result-budget"></strong></div><div><span>Included works</span><strong id="budget-result-cost"></strong></div><div><span>Still available</span><strong id="budget-result-remaining"></strong></div></div>
           <p id="budget-result-message" class="budget-result-message"></p>
-          <h3>Works for this street</h3>
+          <h3>Selected changes</h3>
           <div id="budget-result-items" class="budget-result-items"></div>
           <details id="budget-result-tree-details" class="budget-result-tree-details">
-            <summary id="budget-result-tree-heading">Tree planting mix <span>8 trees</span></summary>
+            <summary id="budget-result-tree-heading">Tree planting mix <span id="budget-result-tree-count"></span></summary>
             <div class="budget-result-tree-content">
-              <p class="budget-result-intro">Eight standard nursery trees: 2–3 m overall height, 1.5–1.8 m clear trunk and a 500 × 300 mm root ball under the published standard-tree specification. Species and exact positions need a verge and utility check.</p>
+              <p id="budget-result-tree-intro" class="budget-result-intro"></p>
               <div id="budget-result-trees" class="budget-result-trees"></div>
             </div>
           </details>

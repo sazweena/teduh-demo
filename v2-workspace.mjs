@@ -1,6 +1,6 @@
 import { ilhamAreaBounds, streetGeometry } from './v2-street-priority.mjs';
 import { legacyReports } from './v2-report-references.mjs';
-import { planForBudget } from './v2-street-plan.mjs';
+import { planForBudget, fixedPlanOptions } from './v2-street-plan.mjs';
 
 const planKey = 'teduh-v2-plans-v1';
 const legacyReportKey = 'teduh-v2-legacy-report-updates-v1';
@@ -43,11 +43,12 @@ export function buildSavedPlan(road, budget, plan, previous) {
   const works = plan.included.filter(item => item.id !== 'site');
   return {
     id: previous?.id || crypto.randomUUID(), roadId: road.id, roadName: road.name,
-    budget, cost: plan.cost, updatedAt: new Date().toISOString(),
+    budget, cost: plan.cost, planId: plan.id || null, updatedAt: new Date().toISOString(),
     items: plan.included.map(item => {
       const old = placed.get(item.id);
       const fraction = (works.findIndex(work => work.id === item.id) + 1) / (works.length + 1);
       return { id: item.id, title: item.title, cost: item.cost,
+        quantity: item.count || 1, maturity: item.maturity || null,
         status: old?.status || 'Proposed',
         coordinates: item.id === 'site' ? null : old?.coordinates || pointAlongRoad(road, fraction),
         locationReviewed: item.id === 'site' ? false : Boolean(old?.locationReviewed) };
@@ -339,7 +340,8 @@ export function createWorkspace({ map, roads = [], onOpen, onEditPlan }) {
     for (const plan of plans) {
       const section = node('section', 'workspace-plan');
       section.append(node('h3', '', plan.roadName));
-      section.append(node('p', 'workspace-muted', `${money(plan.cost)} included · ${money(plan.budget)} budget`));
+      const planLabel = fixedPlanOptions.find(option => option.id === plan.planId)?.label;
+      section.append(node('p', 'workspace-muted', `${planLabel ? `${planLabel} · ` : ''}${money(plan.cost)} included · ${money(plan.budget)} budget`));
       section.append(button('View on map', () => focus(plan.items.find(item => item.coordinates)?.coordinates), 'workspace-secondary'));
       section.append(button('Adjust budget', () => onEditPlan(plan.roadId), 'workspace-secondary'));
       section.append(button('Remove plan', () => {

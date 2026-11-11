@@ -1,7 +1,7 @@
 import * as maplibregl from 'https://unpkg.com/maplibre-gl@6.16.0/dist/maplibre-gl.mjs';
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://unpkg.com/three@0.180.0/examples/jsm/loaders/GLTFLoader.js';
-import { planForBudget } from './v2-street-plan.mjs';
+import { planForBudget, fixedPlanForBudget } from './v2-street-plan.mjs';
 import { frekuensiRoofs } from './v2-roofs.mjs';
 import { createAreaHouses } from './v2-houses.mjs';
 
@@ -10,6 +10,7 @@ const center = [101.50761, 3.18264];
 const previewMode = new URLSearchParams(location.search).get('preview') === 'ilham3';
 const requestedBudget = Number(new URLSearchParams(location.search).get('budget'));
 const previewBudget = Number.isFinite(requestedBudget) && requestedBudget >= 10000 && requestedBudget <= 300000 ? requestedBudget : 70000;
+const requestedPlan = new URLSearchParams(location.search).get('plan');
 const previewHousePosition = [101.51837, 3.18566];
 const cameraCenter = previewMode ? previewHousePosition : [101.5124245, 3.176809];
 const names = { tree: 'Tree', sail: 'Shade sail', crossing: 'Raised crossing', light: 'Street light' };
@@ -59,6 +60,7 @@ function objectFor(item) {
     pole.rotation.x = Math.PI / 2;
     mesh(new THREE.BoxGeometry(1.5, .42, .2), '#f8e6a4', .7, 0, 5.95);
   }
+  if (item.kind === 'tree' && item.maturity === 'young') group.scale.setScalar(.65);
   return group;
 }
 
@@ -215,19 +217,27 @@ function renderRecords() {
 
 async function refreshRecords() {
   if (previewMode) {
-    const included = new Set(planForBudget(previewBudget).included.map(item => item.id));
+    const plan = requestedPlan ? fixedPlanForBudget(requestedPlan, previewBudget) : planForBudget(previewBudget);
+    if (!plan) { status('This plan does not fit the selected budget. Return to the map and choose another plan.'); return; }
+    const treeItem = plan.included.find(item => item.id === 'trees');
+    const sailItem = plan.included.find(item => item.id === 'sail');
+    const hasCrossing = plan.included.some(item => item.id === 'crossing');
     const start = previewRoad.coordinates[0], end = previewRoad.coordinates.at(-1);
     const along = (fraction, north = 0) => [
       start[0] + (end[0] - start[0]) * fraction,
       start[1] + (end[1] - start[1]) * fraction + north,
     ];
     proposals = [
-      ...Array.from({ length: included.has('trees') ? 8 : 0 }, (_, index) => ({
+      ...Array.from({ length: treeItem?.count || 0 }, (_, index) => ({
         id: `preview-tree-${index}`, kind: 'tree', status: 'proposed',
-        coordinates: along((index + 1) / 9, .00007),
+        maturity: treeItem.maturity,
+        coordinates: along((index + 1) / (treeItem.count + 1), .00007),
       })),
-      ...(included.has('sail') ? [{ id: 'preview-sail', kind: 'sail', status: 'proposed', coordinates: along(.42, .00007) }] : []),
-      ...(included.has('crossing') ? [{ id: 'preview-crossing', kind: 'crossing', status: 'proposed', coordinates: along(.65) }] : []),
+      ...Array.from({ length: sailItem?.count || 0 }, (_, index) => ({
+        id: `preview-sail-${index}`, kind: 'sail', status: 'proposed',
+        coordinates: along((index + 1) / ((sailItem?.count || 0) + 1), .00007),
+      })),
+      ...(hasCrossing ? [{ id: 'preview-crossing', kind: 'crossing', status: 'proposed', coordinates: along(.65) }] : []),
     ];
     reports = [];
     renderRecords();

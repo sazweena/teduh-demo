@@ -43,7 +43,7 @@
     if (path === '/api/reports') {
       if (method === 'GET') return reply({ reports: state.reports });
       if (method === 'POST') {
-        if (!['hot', 'cross', 'dark', 'broken'].includes(body.kind) || !validPoint(body.coordinates))
+        if (!['hot', 'cross', 'dark', 'broken', 'other'].includes(body.kind) || !validPoint(body.coordinates))
           return reply({ error: 'Choose a valid problem and location inside Elmina' }, 400);
         const report = { id: id(), kind: body.kind, coordinates: body.coordinates,
           road_name: String(body.road_name || '').slice(0, 160), note: String(body.note || '').slice(0, 800),

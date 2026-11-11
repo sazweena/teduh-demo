@@ -18,6 +18,11 @@ const frekuensi118 = houses.filter(house => house.id.startsWith('generated/way/6
 assert.ok(frekuensi118.length > 0);
 assert.ok(frekuensi118.every(house => house.id.endsWith('/1')),
   'Jalan Frekuensi U16/118 must leave the inner green strip clear');
+const frekuensi113 = houses.filter(house => house.id.startsWith('generated/way/499335111/'));
+assert.ok(frekuensi113.length > 0, 'Southern Jalan Frekuensi U16/113 roofs remain');
+assert.ok(frekuensi113.every(house => house.coordinates.slice(0, -1).reduce((sum, point) => sum + point[1], 0)
+    / (house.coordinates.length - 1) < 3.1888),
+  'Northern Jalan Frekuensi U16/113 must leave the mismatched row clear');
 assert.ok(houses.filter(house => house.kind === 'generated').length > 400);
 assert.ok(houses.filter(house => house.kind === 'mapped').length > 100);
 assert.equal(new Set(houses.map(house => house.id)).size, houses.length);

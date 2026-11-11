@@ -4,9 +4,10 @@ import { frekuensiRoofs } from './v2-roofs.mjs';
 import { createAreaHouses } from './v2-houses.mjs';
 import { generateResidentRoutes } from './v2-resident-routes.mjs';
 import { startBudgetAnimation } from './v2-budget-animation.mjs';
-import { treeMix, planItems, fullPlanCost, planForBudget } from './v2-street-plan.mjs';
+import { treeMix, fixedPlanOptions, fixedPlanForBudget } from './v2-street-plan.mjs';
 import { inIlhamArea, streetGeometry, streetMidpoint, priorityFactors, priorityAt, priorityColor } from './v2-street-priority.mjs';
 import { createWorkspace } from './v2-workspace.mjs';
+import { mapConcerns } from './v2-report-references.mjs';
 
 const timeSlider = document.getElementById('time-slider');
 const timeOutput = document.getElementById('time-output');
@@ -25,8 +26,12 @@ const budgetProcessDescription = document.getElementById('budget-process-descrip
 const budgetProcessProgress = document.getElementById('budget-process-progress');
 const budgetProcessPercent = document.getElementById('budget-process-percent');
 const budgetProcessAction = document.getElementById('budget-process-action');
+const budgetPlanCount = document.getElementById('budget-plan-count');
+const budgetPlanCountNumber = document.getElementById('budget-plan-count-number');
 const budgetResult = document.getElementById('budget-result');
 const mapPanel = document.querySelector('.map-panel');
+const rankingList = document.getElementById('priority-ranking-list');
+const rankingTime = document.getElementById('priority-ranking-time');
 const edgeIndicators = document.getElementById('priority-edge-indicators');
 const mapStatus = document.getElementById('map-status');
 const sunToggle = document.getElementById('sun-toggle');
@@ -99,32 +104,44 @@ let priorityPins = [];
 let selectedRoad;
 let selectedPosition;
 let selectedBudget = 70000;
+let selectedPlanId = null;
 let stopBudgetAnimation;
 let budgetAnimationComplete = false;
+let budgetCounterFrame;
+let budgetCounterTimeout;
+let budgetRevealFrame;
+let budgetResultRevealTimeout;
 let workspace;
 const money = amount => `RM${amount.toLocaleString('en-MY')}`;
 const budgetStorageKey = road => `teduh-v2-budget:${road.name === 'Unnamed mapped way' ? road.id : road.name}`;
 function loadStreetBudget(road) {
   selectedBudget = 70000;
+  selectedPlanId = null;
   try {
     const storedBudget = Number(localStorage.getItem(budgetStorageKey(road)));
     if (Number.isInteger(storedBudget) && storedBudget >= 10000 && storedBudget <= 300000) {
       selectedBudget = storedBudget;
     }
+    selectedPlanId = localStorage.getItem(`teduh-v2-plan-option:${road.name}`);
   } catch { /* Browser storage may be unavailable. */ }
 }
 
 function createPriorityPin(name) {
+  const report = mapConcerns.find(item => item.roadName === name);
   const pin = document.createElement('button');
   pin.type = 'button';
-  pin.className = 'priority-pin-marker';
-  pin.setAttribute('aria-label', `Open details for highest-priority street: ${name}`);
+  pin.className = `priority-pin-marker${report ? ' priority-pin-report' : ''}`;
+  pin.setAttribute('aria-label', report ? `Open resident report on ${name}` : `Open details for highest-priority street: ${name}`);
   const shape = document.createElement('span');
   shape.className = 'priority-pin-shape';
-  const icon = document.createElement('span');
-  icon.textContent = '!';
-  icon.setAttribute('aria-hidden', 'true');
-  shape.append(icon);
+  if (report) {
+    shape.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5c-1.3 0-2.5-.3-3.5-.9L4 20l1.9-5A7.5 7.5 0 1 1 20 11.5Z"/><path d="M9 11.5h7"/></svg>';
+  } else {
+    const icon = document.createElement('span');
+    icon.textContent = '!';
+    icon.setAttribute('aria-hidden', 'true');
+    shape.append(icon);
+  }
   pin.append(shape);
   return pin;
 }
@@ -168,10 +185,11 @@ function renderPriority() {
     strokeWeight: 6, strokeOpacity: .9, clickable: true, zIndex: 12,
   }));
   for (const pin of priorityPins) {
-    const visible = priorityColor(priorityAt(pin.road, hour)) === '#b52f27';
+    const visible = Boolean(pin.report);
     pin.mapElement.hidden = !visible;
     if (pin.googleElement) pin.googleElement.hidden = !visible;
   }
+  renderRanking(hour);
   updateEdgeIndicators();
   if (selectedRoad && inIlhamArea(selectedRoad)) updateStreetPriority();
 }
@@ -194,21 +212,72 @@ function updateStreetPriority() {
   streetDetail.querySelector('[data-crossing-detail]').textContent = factors.crossingDistance ? `${factors.crossingDistance} m to crossing` : 'crossing gap';
 }
 
+function renderRanking(hour) {
+  rankingTime.value = formatHour(hour);
+  if (!priorityPins.length) return;
+  const ranked = [...priorityPins].sort((a, b) =>
+    priorityAt(b.road, hour) - priorityAt(a.road, hour) || a.road.name.localeCompare(b.road.name));
+  const rows = document.createDocumentFragment();
+  for (const [index, entry] of ranked.entries()) {
+    const score = priorityAt(entry.road, hour);
+    const row = document.createElement('li');
+    const open = document.createElement('button');
+    open.type = 'button';
+    open.className = 'priority-ranking-row';
+    open.setAttribute('aria-label', `Rank ${index + 1}: ${entry.road.name}, priority ${score.toFixed(2)}.${entry.report ? ' Resident report available.' : ''} View street`);
+    const number = document.createElement('span');
+    number.className = 'priority-ranking-number';
+    number.textContent = String(index + 1).padStart(2, '0');
+    const details = document.createElement('span');
+    details.className = 'priority-ranking-details';
+    const name = document.createElement('span');
+    name.className = 'priority-ranking-name';
+    const nameText = document.createElement('span');
+    nameText.textContent = entry.road.name;
+    name.append(nameText);
+    if (entry.report) {
+      const reportAlert = document.createElement('span');
+      reportAlert.className = 'priority-ranking-report-alert';
+      reportAlert.textContent = '!';
+      reportAlert.title = 'Resident report';
+      reportAlert.setAttribute('aria-hidden', 'true');
+      name.append(reportAlert);
+    }
+    const track = document.createElement('span');
+    track.className = 'priority-ranking-track';
+    track.setAttribute('aria-hidden', 'true');
+    const fill = document.createElement('span');
+    fill.className = 'priority-ranking-fill';
+    fill.style.width = `${Math.min(100, Math.max(0, score * 100))}%`;
+    fill.style.backgroundColor = priorityColor(score);
+    track.append(fill);
+    details.append(name, track);
+    const value = document.createElement('strong');
+    value.className = 'priority-ranking-value';
+    value.textContent = score.toFixed(2);
+    open.append(number, details, value);
+    open.addEventListener('click', () => showStreet(entry.road, entry.position));
+    row.append(open);
+    rows.append(row);
+  }
+  rankingList.replaceChildren(rows);
+}
+
 function updateEdgeIndicators() {
   const width = mapPanel.clientWidth;
   const height = mapPanel.clientHeight;
   const inset = 24;
   if (width <= 2 * inset || height <= 2 * inset) return;
   for (const pin of priorityPins) {
-    const red = priorityColor(priorityAt(pin.road, Number(timeSlider.value))) === '#b52f27';
+    const red = Boolean(pin.report);
     const point = satelliteActive ? pin.googlePoint : map.project(pin.position);
     const badge = pin.edgeElement;
     if (!red || !point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) {
       badge.hidden = true;
       continue;
     }
-    const offscreen = point.x < inset || point.x > width - inset
-      || point.y < inset || point.y > height - inset;
+    const offscreen = point.x < -18 || point.x > width + 18
+      || point.y < 0 || point.y > height + 37;
     badge.hidden = !offscreen;
     if (!offscreen) continue;
     const dx = point.x - width / 2;
@@ -324,6 +393,28 @@ function showStreet(road, position = streetMidpoint([road]) || road.coordinates[
     formula.setAttribute('role', 'group');
     formula.setAttribute('aria-label', 'Priority score calculation');
     formula.innerHTML = '<div class="formula-factors"><div class="formula-box formula-walkers"><span>Walkers</span><strong data-walkers-factor></strong><small data-walkers-detail></small></div><div class="formula-box formula-exposure"><span>In sun</span><strong data-exposure-factor></strong><small data-exposure-detail></small></div><div class="formula-box formula-vulnerable"><span>Kids / elderly</span><strong data-vulnerable-factor></strong><small data-vulnerable-detail></small></div><div class="formula-box formula-crossing"><span>No crossing</span><strong data-crossing-factor></strong><small data-crossing-detail></small></div></div><div class="formula-equation" aria-hidden="true">Multiply all four factors</div><div class="formula-box formula-score"><span>Priority score</span><strong data-priority-score></strong><small data-priority-rank></small></div><p class="formula-note">Each factor runs from 0 to 1. A street with no walkers scores 0.</p>';
+    const report = mapConcerns.find(item => item.roadName === road.name);
+    const reportCard = document.createElement('section');
+    if (report) {
+      reportCard.className = 'street-report-card';
+      const heading = document.createElement('h3');
+      heading.textContent = 'Street concern';
+      const source = document.createElement('p');
+      source.className = 'street-report-source';
+      source.textContent = report.sourceLabel;
+      const note = document.createElement('p');
+      note.textContent = report.note;
+      reportCard.append(heading, source);
+      if (report.image) {
+        const image = document.createElement('img');
+        image.src = report.image;
+        image.alt = report.imageAlt;
+        const caption = document.createElement('small');
+        caption.textContent = 'Generated illustration';
+        reportCard.append(image, caption);
+      }
+      reportCard.append(note);
+    }
     const budgetButton = document.createElement('button');
     budgetButton.type = 'button';
     budgetButton.className = 'street-budget-button';
@@ -335,7 +426,9 @@ function showStreet(road, position = streetMidpoint([road]) || road.coordinates[
       budgetDialog.showModal();
       budgetAmount.focus();
     });
-    streetDetail.append(formulaHour, formula, budgetButton);
+    streetDetail.append(formulaHour, formula);
+    if (report) streetDetail.append(reportCard);
+    streetDetail.append(budgetButton);
     updateStreetPriority();
   } else {
     const details = document.createElement('small');
@@ -512,7 +605,7 @@ async function loadSatellite(googleMapsKey, walkableRoads) {
           event.stopPropagation();
           showStreet(this.entry.road, this.entry.position);
         });
-        this.element.hidden = priorityColor(priorityAt(this.entry.road, Number(timeSlider.value))) !== '#b52f27';
+        this.element.hidden = !this.entry.report;
         this.entry.googleElement = this.element;
         this.getPanes().overlayMouseTarget.appendChild(this.element);
       }
@@ -647,19 +740,23 @@ async function loadMap() {
       const position = streetMidpoint(roads);
       if (!position) continue;
       const mapElement = createPriorityPin(roads[0].name);
+      const report = mapConcerns.find(item => item.roadName === roads[0].name);
       mapElement.hidden = true;
       const edgeElement = document.createElement('button');
       edgeElement.type = 'button';
       edgeElement.className = 'priority-edge-indicator';
-      edgeElement.textContent = '!';
+      if (report) {
+        edgeElement.classList.add('priority-edge-report');
+        edgeElement.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5c-1.3 0-2.5-.3-3.5-.9L4 20l1.9-5A7.5 7.5 0 1 1 20 11.5Z"/><path d="M9 11.5h7"/></svg>';
+      } else edgeElement.textContent = '!';
       edgeElement.hidden = true;
-      edgeElement.setAttribute('aria-label', `Show highest-priority street: ${roads[0].name}`);
+      edgeElement.setAttribute('aria-label', report ? `Show resident report on ${roads[0].name}` : `Show highest-priority street: ${roads[0].name}`);
       edgeElement.title = roads[0].name;
       edgeElement.addEventListener('click', () => {
         showStreet(roads[0], position);
       });
       edgeIndicators.append(edgeElement);
-      priorityPins.push({ road: roads[0], position, mapElement, edgeElement, googleElement: null });
+      priorityPins.push({ road: roads[0], report, position, mapElement, edgeElement, googleElement: null });
       mapElement.addEventListener('click', event => {
         event.stopPropagation();
         showStreet(roads[0], position);
@@ -726,7 +823,16 @@ window.addEventListener('keydown', event => {
   if (event.key === 'Escape' && !streetDetail.hidden) hideStreetDetail();
 });
 timeSlider.addEventListener('input', updateTime);
+const budgetSnapValue = 150000;
+const budgetSnapDistance = 6000;
+let budgetPointerSliding = false;
+budgetSlider.addEventListener('pointerdown', () => { budgetPointerSliding = true; });
+window.addEventListener('pointerup', () => { budgetPointerSliding = false; });
+window.addEventListener('pointercancel', () => { budgetPointerSliding = false; });
 budgetSlider.addEventListener('input', () => {
+  if (budgetPointerSliding && Math.abs(Number(budgetSlider.value) - budgetSnapValue) <= budgetSnapDistance) {
+    budgetSlider.value = String(budgetSnapValue);
+  }
   budgetAmount.value = budgetSlider.value;
   budgetError.hidden = true;
 });
@@ -752,7 +858,20 @@ budgetForm.addEventListener('submit', event => {
 });
 function openBudgetProcess() {
   stopBudgetAnimation?.();
+  cancelAnimationFrame(budgetCounterFrame);
+  cancelAnimationFrame(budgetRevealFrame);
+  clearTimeout(budgetCounterTimeout);
+  clearTimeout(budgetResultRevealTimeout);
   budgetAnimationComplete = false;
+  budgetProcessCanvas.style.visibility = '';
+  budgetPlanCount.hidden = true;
+  budgetPlanCount.style.transform = '';
+  budgetPlanCount.style.opacity = '';
+  budgetPlanCountNumber.textContent = '0';
+  budgetResult.classList.remove('is-revealing');
+  budgetResult.style.transform = '';
+  budgetResult.style.pointerEvents = '';
+  budgetResult.removeAttribute('aria-hidden');
   budgetProcessTitle.textContent = 'Preparing your budget';
   budgetProcessDescription.textContent = `${money(selectedBudget)} available for ${selectedRoad.name}`;
   budgetProcessProgress.hidden = false;
@@ -770,43 +889,152 @@ function finishBudgetProcess() {
   if (budgetAnimationComplete) return;
   budgetAnimationComplete = true;
   stopBudgetAnimation?.();
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    showBudgetResult();
+    return;
+  }
+  budgetProcessCanvas.style.visibility = 'hidden';
+  budgetPlanCount.hidden = false;
+  const planCount = fixedPlanOptions.length;
+  const countDuration = 1050;
+  let started;
+  const count = now => {
+    started ??= now;
+    const progress = Math.min(1, (now - started) / countDuration);
+    budgetPlanCountNumber.textContent = String(Math.min(planCount, Math.floor(progress * (planCount + 1))));
+    if (progress < 1) budgetCounterFrame = requestAnimationFrame(count);
+    else budgetCounterTimeout = setTimeout(startBudgetAutoReveal, 250);
+  };
+  budgetCounterFrame = requestAnimationFrame(count);
+}
+function startBudgetAutoReveal() {
+  renderBudgetResult();
+  budgetResult.scrollTop = 0;
+  budgetResult.style.transform = 'translate3d(0, 100%, 0)';
+  budgetResult.style.pointerEvents = 'none';
+  budgetResult.setAttribute('aria-hidden', 'true');
+  budgetResult.hidden = false;
+  const duration = 2200;
+  let started;
+  const advance = now => {
+    started ??= now;
+    const t = Math.min(1, (now - started) / duration);
+    const progress = t * t * (3 - 2 * t);
+    const offset = progress * Math.max(0, window.innerHeight / 2 - (window.innerWidth < 600 ? 42 : 60));
+    budgetPlanCount.style.transform = `translate(-50%, -50%) translateY(-${offset}px) scale(${1 - progress * .6})`;
+    budgetPlanCount.style.opacity = String(Math.max(0, 1 - progress / .85));
+    budgetResult.style.transform = `translate3d(0, ${(1 - progress) * 100}%, 0)`;
+    if (t < 1) budgetRevealFrame = requestAnimationFrame(advance);
+    else {
+      budgetProcess.hidden = true;
+      budgetResult.style.transform = '';
+      budgetResult.style.pointerEvents = '';
+      budgetResult.removeAttribute('aria-hidden');
+      budgetResult.classList.add('is-revealing');
+      budgetResultRevealTimeout = setTimeout(() => budgetResult.classList.remove('is-revealing'), 1100);
+      document.getElementById('budget-result-close').focus();
+    }
+  };
+  budgetRevealFrame = requestAnimationFrame(advance);
+}
+function showBudgetResult() {
+  cancelAnimationFrame(budgetCounterFrame);
+  cancelAnimationFrame(budgetRevealFrame);
+  clearTimeout(budgetCounterTimeout);
+  clearTimeout(budgetResultRevealTimeout);
+  budgetAnimationComplete = true;
+  stopBudgetAnimation?.();
   budgetProcess.hidden = true;
   renderBudgetResult();
+  budgetResult.classList.remove('is-revealing');
+  budgetResult.style.transform = '';
+  budgetResult.style.pointerEvents = '';
+  budgetResult.removeAttribute('aria-hidden');
   budgetResult.hidden = false;
   document.getElementById('budget-result-close').focus();
 }
 budgetProcessAction.addEventListener('click', () => {
-  if (!budgetAnimationComplete) {
-    finishBudgetProcess();
-  }
+  if (!budgetProcess.hidden) showBudgetResult();
 });
+function renderPlanOptions() {
+  const options = document.getElementById('budget-plan-options');
+  options.replaceChildren();
+  const planVisuals = {
+    a: '<circle cx="45" cy="43" r="17"/><circle cx="98" cy="43" r="17"/><circle cx="151" cy="43" r="17"/><circle cx="204" cy="43" r="17"/>',
+    b: '<path d="M22 24 78 24 50 56Z"/><path d="M92 24 148 24 120 56Z"/><path d="M162 24 218 24 190 56Z"/>',
+    c: '<circle cx="42" cy="43" r="17"/><circle cx="90" cy="43" r="17"/><path d="M116 24 168 24 142 56Z"/><path d="M182 57v27m10-27v27m10-27v27m10-27v27"/>',
+  };
+  for (const [index, option] of fixedPlanOptions.entries()) {
+    const available = option.cost <= selectedBudget;
+    const choice = document.createElement('button');
+    choice.type = 'button';
+    choice.className = `budget-plan-card${option.id === selectedPlanId ? ' is-selected' : ''}`;
+    choice.disabled = !available;
+    choice.setAttribute('aria-pressed', String(option.id === selectedPlanId));
+    choice.dataset.planId = option.id;
+    choice.style.setProperty('--plan-order', index);
+    const visual = document.createElement('span');
+    visual.className = `budget-plan-visual budget-plan-visual-${option.id}`;
+    visual.setAttribute('aria-hidden', 'true');
+    if (option.id === 'a') {
+      const photo = document.createElement('img');
+      photo.src = './assets/plan-a-young-trees.webp';
+      photo.alt = '';
+      photo.loading = 'lazy';
+      visual.append(photo);
+    } else {
+      visual.innerHTML = `<svg viewBox="0 0 240 96" role="presentation"><rect x="0" y="0" width="240" height="96" rx="7" fill="#e6eee5"/><rect x="0" y="59" width="240" height="37" fill="#84918b"/><path d="M0 57H240" stroke="#fff" stroke-width="4"/><g>${planVisuals[option.id]}</g></svg>`;
+    }
+    choice.append(visual);
+    for (const [className, value] of [
+      ['budget-plan-label', `${option.label} · ${option.timing}`],
+      ['budget-plan-title', option.title],
+      ['budget-plan-cost', money(option.cost)],
+      ['budget-plan-summary', option.summary],
+      ['budget-plan-tradeoff', `Pro: ${option.pros}`],
+      ['budget-plan-tradeoff', `Con: ${option.cons}`],
+      ['budget-plan-state', available ? option.id === selectedPlanId ? 'Selected plan' : 'Choose this plan'
+        : `${money(option.cost - selectedBudget)} above budget`],
+    ]) {
+      const line = document.createElement('span');
+      line.className = className;
+      line.textContent = value;
+      choice.append(line);
+    }
+    choice.addEventListener('click', () => {
+      selectedPlanId = option.id;
+      try { localStorage.setItem(`teduh-v2-plan-option:${selectedRoad.name}`, option.id); } catch { /* Keep this page's choice. */ }
+      renderBudgetResult();
+      options.querySelector(`[data-plan-id="${option.id}"]`)?.focus();
+    });
+    options.append(choice);
+  }
+}
 function renderBudgetResult() {
-  const plan = planForBudget(selectedBudget);
-  document.getElementById('budget-result-save').disabled = plan.included.length === 0;
+  document.getElementById('budget-result-title').textContent = `${fixedPlanOptions.length} proposed plans`;
+  const affordable = fixedPlanOptions.filter(option => option.cost <= selectedBudget);
+  if (!fixedPlanForBudget(selectedPlanId, selectedBudget)) selectedPlanId = affordable.at(-1)?.id || null;
+  const plan = fixedPlanForBudget(selectedPlanId, selectedBudget);
+  document.getElementById('budget-result-save').disabled = !plan;
   const previewButton = document.getElementById('budget-result-preview');
-  previewButton.hidden = selectedRoad.name !== ilhamStreetName || plan.included.length === 0;
+  previewButton.hidden = selectedRoad.name !== ilhamStreetName || !plan;
   const previewError = document.getElementById('budget-result-preview-error');
   previewError.textContent = '';
   previewError.hidden = true;
-  const included = new Set(plan.included.map(item => item.id));
   document.getElementById('budget-result-street').textContent = selectedRoad.name;
   document.getElementById('budget-result-budget').textContent = money(selectedBudget);
-  document.getElementById('budget-result-cost').textContent = money(plan.cost);
-  document.getElementById('budget-result-remaining').textContent = money(plan.remaining);
+  document.getElementById('budget-result-cost').textContent = money(plan?.cost || 0);
+  document.getElementById('budget-result-remaining').textContent = money(plan?.remaining ?? selectedBudget);
+  renderPlanOptions();
   const message = document.getElementById('budget-result-message');
-  message.textContent = !plan.cost
-    ? `The first complete package starts at RM20,000. Increase the budget to include trees and site checks.`
-    : plan.gap
-      ? `${money(plan.gap)} more would cover the full ${money(fullPlanCost)} package. Items below show what this budget can fund together.`
-      : `The full package fits. ${money(plan.remaining)} remains available for this street.`;
-  document.getElementById('budget-result-tree-details').open = false;
-  document.getElementById('budget-result-tree-heading').firstChild.textContent = included.has('trees')
-    ? 'Tree planting mix ' : 'Tree planting mix for the next step ';
+  message.textContent = plan
+    ? `${plan.label} uses ${money(plan.cost)}. ${money(plan.remaining)} remains available for this street.`
+    : `The first plan needs ${money(fixedPlanOptions[0].cost)}. Increase the budget by ${money(fixedPlanOptions[0].cost - selectedBudget)} to choose it.`;
   const itemList = document.getElementById('budget-result-items');
   itemList.replaceChildren();
-  for (const item of planItems) {
+  for (const item of plan?.included || []) {
     const row = document.createElement('div');
-    row.className = `budget-result-item${included.has(item.id) ? '' : ' is-pending'}`;
+    row.className = 'budget-result-item';
     const copy = document.createElement('div');
     const title = document.createElement('strong');
     title.textContent = item.title;
@@ -816,39 +1044,41 @@ function renderBudgetResult() {
     const price = document.createElement('div');
     price.className = 'budget-result-item-price';
     const status = document.createElement('span');
-    status.textContent = included.has(item.id) ? 'Included' : 'Next step';
+    status.textContent = 'Included';
     const amount = document.createElement('strong');
     amount.textContent = money(item.cost);
     price.append(status, amount);
     row.append(copy, price);
     itemList.append(row);
   }
+  const treeItem = plan?.included.find(item => item.id === 'trees');
+  const treeDetails = document.getElementById('budget-result-tree-details');
+  treeDetails.hidden = !treeItem;
+  treeDetails.open = false;
   const treeList = document.getElementById('budget-result-trees');
   treeList.replaceChildren();
+  if (!treeItem) return;
+  document.getElementById('budget-result-tree-count').textContent = `${treeItem.count} trees`;
+  document.getElementById('budget-result-tree-intro').textContent = treeItem.maturity === 'young'
+    ? 'Young nursery trees establish before they provide broad canopy. The mix and positions need a verge and utility check.'
+    : 'Larger nursery trees can provide earlier canopy, but still need establishment and a verge and utility check.';
   for (const tree of treeMix) {
     const row = document.createElement('div');
     row.className = 'budget-result-tree';
     const identity = document.createElement('div');
     const name = document.createElement('strong');
-    name.textContent = `${tree.count} × ${tree.name}`;
+    name.textContent = `${tree.count * treeItem.count / 8} × ${tree.name}`;
     const scientific = document.createElement('em');
     scientific.textContent = tree.scientific;
     const role = document.createElement('p');
     role.textContent = tree.role;
     identity.append(name, scientific, role);
-    const reference = document.createElement('div');
-    reference.className = 'budget-result-tree-price';
-    const label = document.createElement('span');
-    label.textContent = 'Published tree unit';
-    const amount = document.createElement('strong');
-    amount.textContent = `${money(tree.unit)} each`;
-    reference.append(label, amount);
-    row.append(identity, reference);
+    row.append(identity);
     treeList.append(row);
   }
   const treeNote = document.createElement('p');
   treeNote.className = 'budget-result-tree-note';
-  treeNote.textContent = `Tree units total ${money(treeMix.reduce((sum, tree) => sum + tree.count * tree.unit, 0))}. The ${money(planItems[0].cost)} tree package also covers planting work and establishment.`;
+  treeNote.textContent = `${money(treeItem.cost)} is the planning allowance for this tree package, including planting work and establishment.`;
   treeList.append(treeNote);
 }
 function closeBudgetResult() {
@@ -860,6 +1090,7 @@ function enter3dPreview() {
   const url = new URL('./map-3d.html', location.href);
   url.searchParams.set('preview', 'ilham3');
   url.searchParams.set('budget', String(selectedBudget));
+  url.searchParams.set('plan', selectedPlanId);
   budgetResult.hidden = true;
   location.assign(url.href);
 }
@@ -869,7 +1100,9 @@ document.getElementById('budget-result-preview').addEventListener('click', enter
 document.getElementById('budget-result-save').addEventListener('click', () => {
   const error = document.getElementById('budget-result-preview-error');
   try {
-    workspace.savePlan(selectedRoad, selectedBudget, planForBudget(selectedBudget));
+    const plan = fixedPlanForBudget(selectedPlanId, selectedBudget);
+    if (!plan) throw Error('Choose a plan that fits this budget.');
+    workspace.savePlan(selectedRoad, selectedBudget, plan);
     budgetResult.hidden = true;
   } catch (issue) {
     error.textContent = issue.message;

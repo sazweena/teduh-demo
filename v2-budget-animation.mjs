@@ -1,5 +1,5 @@
 // Adapted from the circular network animation in ibm-dataton/frontend/app/ml-process/page.tsx.
-const duration = 6200;
+const duration = 7700;
 const nodeCount = 96;
 const edgeCount = 312;
 const edges = Array.from({ length: edgeCount }, (_, index) => {
@@ -36,9 +36,13 @@ function draw(canvas, time) {
   const connect = clamp((time - 800) / 2100);
   const release = smooth((time - 4700) / 1100);
   const gather = smooth((time - 5200) / 1000);
+  const drop = smooth((time - 6100) / 650);
+  const grow = smooth((time - 6300) / 800);
+  const morph = smooth((time - 7100) / 600);
   const nodePoint = index => {
     const angle = -Math.PI / 2 + (index * Math.PI * 2 / nodeCount) * (1 - gather);
-    return { x: center.x + Math.cos(angle) * radius, y: center.y + Math.sin(angle) * radius };
+    return { x: center.x + Math.cos(angle) * radius,
+      y: center.y + Math.sin(angle) * radius + (index === 0 ? radius * drop : 0) };
   };
   const activeEdges = [];
   context.lineWidth = Math.max(.7, width / 1100);
@@ -83,7 +87,24 @@ function draw(canvas, time) {
     context.translate(point.x, point.y);
     context.rotate(angle + Math.PI / 2);
     context.fillStyle = index === 0 && gather > 0 ? '#b52f27' : `rgba(23, 48, 41, ${.58 * fade})`;
-    context.fillRect(-1.3, -4, 2.6, 8);
+    if (index === 0 && morph > 0) {
+      const size = Math.min(width, height);
+      const outerWidth = size * (.15 - .055 * morph);
+      const outerHeight = size * (.085 + .05 * morph);
+      context.beginPath();
+      context.roundRect(-outerWidth / 2, -outerHeight / 2, outerWidth, outerHeight, outerWidth * .48 * morph);
+      context.fill();
+      context.fillStyle = '#f8f8f3';
+      const innerWidth = outerWidth * .42 * morph;
+      const innerHeight = outerHeight * .56 * morph;
+      context.beginPath();
+      context.roundRect(-innerWidth / 2, -innerHeight / 2, innerWidth, innerHeight, innerWidth / 2);
+      context.fill();
+    } else {
+      const blockWidth = index === 0 ? 2.6 + (Math.min(width, height) * .15 - 2.6) * grow : 2.6;
+      const blockHeight = index === 0 ? 8 + (Math.min(width, height) * .085 - 8) * grow : 8;
+      context.fillRect(-blockWidth / 2, -blockHeight / 2, blockWidth, blockHeight);
+    }
     context.restore();
   }
 }

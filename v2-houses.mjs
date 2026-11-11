@@ -159,6 +159,8 @@ export function createAreaHouses(roads, mappedRoofs) {
         const center = [centerline[0] + normal[0] * side * 14,
           centerline[1] + normal[1] * side * 14];
         if (!insideBounds(toMap(center))) continue;
+        // The northern U16/113 row crosses open space and existing roofs in the aerial view.
+        if (road.id === 'way/499335111' && toMap(center)[1] >= 3.1888) continue;
         if (generatedCenters.some(previous => distance(previous, center) < 7.1)) continue;
         if (mappedPolygons.some(polygon => pointInPolygon(center, polygon)
           || polygon.some((point, index) => pointSegmentDistance(center, point,
