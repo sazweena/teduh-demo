@@ -81,10 +81,11 @@ export function priorityFactors(road, hour) {
   const commonFactor = Math.pow(base, .25);
   const peakWalkers = isIlham3 ? 120 : Math.round(120 * commonFactor);
   const walkerCount = Math.round(peakWalkers * (hourWeight[hour] ?? hourWeight[13]));
+  const daylightFactor = hour <= 7 || hour >= 19 ? 0 : Math.sin(Math.PI * (hour - 7) / 12);
   return {
     walkers: walkerCount / 120,
     walkerCount,
-    exposure: isIlham3 ? .95 : commonFactor,
+    exposure: (isIlham3 ? .95 : commonFactor) * daylightFactor,
     vulnerable: isIlham3 ? .95 : commonFactor,
     crossing: isIlham3 ? .90 : commonFactor,
     crossingDistance: isIlham3 ? 150 : null,
