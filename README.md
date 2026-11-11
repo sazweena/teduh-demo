@@ -9,7 +9,7 @@ Teduh helps township planners inspect walking heat, compare fixes within a budge
 - Live prototype (main link for judges), planner and resident views: https://sazweena.github.io/teduh-demo/
 - Full Elmina street map: https://sazweena.github.io/teduh-demo/map.html
 - 3D Elmina planning view: [map-3d.html](map-3d.html)
-- Resident report form: https://sazweena.github.io/teduh-demo/report.html
+- Resident report in the owner-app view: https://sazweena.github.io/teduh-demo/sdp-app.html?report=1
 - Proposed owner-app integration: https://sazweena.github.io/teduh-demo/sdp-app.html
 
 Use *Reset demo* to open the planner map and resident view side by side at noon. Move the FIND slider to 1:00 PM to see the highlighted planning route change to dark red. Its scenario priority becomes 0.81, with 120 walkers per hour, 95% sun exposure, and a 150 m crossing gap. Click *Next: Plan fixes*, set RM300,000, and confirm. The recommendation shows 5 fixes, RM263,000 allocated, and 2,960 estimated daily trips. Click *Preview on map* to inspect the illustrative Jalan Elmina 3 tree, sail, and crossing locations. The resident phone flow can submit a scenario report and show the planner response.
@@ -41,7 +41,11 @@ The v2 map starts with the OpenStreetMap Street map. Its optional Satellite swit
 
 The 3D view uses MapLibre and OpenFreeMap vector tiles for the basemap. Outside the Ilham and Frekuensi area, building extrusions use the project's OpenStreetMap footprint snapshot with a uniform 5 m visual height because that snapshot has no building heights. In the Ilham and Frekuensi area, the mapped and road-aligned approximate roof units from `v2-houses.mjs` are extruded at 6 m; their source footprints are omitted to prevent stacked geometry. Five adjacent mapped terrace footprints near Jalan Metafasa U16/163 use original GLB house models, one end unit and four intermediate units. Their facades, side yard, and heights are visual approximations, not verified designs of those homes or of homes on Jalan Elmina Ilham 3. The models are scaled to the selected footprints and replace their generic extrusions. Modular sidewalk GLBs follow those five frontages, with tree-well modules at alternating houses and a side-yard extension at the end unit. Straight road GLBs follow the nearby mapped road centerline. Their 3 m sidewalk and 6 m road widths are visual assumptions; OpenStreetMap does not provide surveyed curb positions here. A visual verge with separate driveway strips fills the gap between the modeled sidewalk and mapped road strip; its layout is not surveyed. Intersections and bends still use the basemap. Trees, sails, crossings, and lights are georeferenced representations of saved proposed fixes, not surveyed designs. The view flags saved points that overlap mapped building footprints; review those placements before using them in a plan. The 3D view reads the same browser-local proposed fixes and reports as the 2D map and refreshes while open.
 
-This GitHub Pages site has no backend. Reports and proposed map fixes entered in the separate map and report form are stored in the current browser so those pages can work together. They are not shared across devices and are not submitted to Sime Darby Property or a council. The resident phone flow inside `index.html` is also a local planning scenario. The separate private pilot can use a shared server and database.
+This GitHub Pages site has no backend. Proposed map fixes are stored in the current browser and can appear across the 2D and 3D views. The report flow inside `sdp-app.html` keeps new reports in that page until reload. The resident phone flow inside `index.html` updates its planner view within the open page. Neither flow submits to Sime Darby Property or a council. The separate private pilot can use a shared server and database.
+
+The map-first workspace has Proposed changes and Reports panels over the map. Saving a budget result stores the included works as a street plan in this browser (`teduh-v2-plans-v1`), with suggested points along the selected mapped street. The planner can adjust the budget, inspect each work, set its map location, change its status, or remove the plan. The site-check allowance has no pin. These plans are separate from the older map's `teduh-team-local-v1` proposal records and do not automatically appear in the 3D view. The Reports panel reads that older browser-local report store, shows map pins and status filters, and can save a status and reply. The owner-app phone page currently keeps new reports in its own page memory, so those reports do not yet reach this panel. The browser-local API accepts report coordinates across the Ilham and Frekuensi map area, east to longitude 101.5221. None of these records is shared across devices.
+
+The resident report list also includes two image-backed entries carried over from the former planner. They are labelled as earlier planner entries, and their images as generated illustrations rather than resident photos. Their status and team notes can be updated in this browser (`teduh-v2-legacy-report-updates-v1`). The shade entry can focus the mapped Jalan Elmina Ilham 3 street, but its exact point is unconfirmed. The crossing entry retains its earlier Persiaran Elmina name without a map pin because that location has not been matched to the current Ilham and Frekuensi view. The older planner's support counts, dates, and Planned/Built claims are not imported as resident activity. A new browser also receives one proposed RM110,000 plan on Jalan Frekuensi U16/120, with RM95,000 in included works and RM15,000 unallocated. Its suggested pins require site review. The plan is added once and is not restored after removal.
 
 ## Files
 
@@ -50,14 +54,13 @@ This GitHub Pages site has no backend. Reports and proposed map fixes entered in
 | `index.html` | Planner, budget engine, resident phone, and pitch reset |
 | `map.html`, `app.js`, `styles.css` | OSM street map, hourly FIND overlay, and proposed fixes |
 | `map-3d.html`, `map-3d.js`, `map-3d.css` | MapLibre 3D view of mapped streets, selected terrace homes, street surfaces, and coordinate-based proposed fixes |
-| `v2-map.html`, `v2-map.js`, `v2-map.css`, `v2-houses.mjs`, `v2-street-plan.mjs`, `v2-street-priority.mjs`, `v2-sun.mjs`, `v2-local.py` | Map-first workspace with a 2.5D toggle, hourly street priority, budget result, park footpaths, resident routes, house outlines, and building shadows |
+| `v2-map.html`, `v2-map.js`, `v2-map.css`, `v2-workspace.mjs`, `v2-houses.mjs`, `v2-street-plan.mjs`, `v2-street-priority.mjs`, `v2-sun.mjs`, `v2-local.py` | Map-first workspace with hourly street priority, proposed changes, report management, budget planning, 2.5D view, routes, house outlines, and shadows |
 | `assets/models/elmina-house/` | Two original GLB house models, Blender sources, renders, and asset notes |
 | `assets/models/elmina-streets/` | Modular sidewalk and road GLBs, Blender sources, textures, renders, and validation notes |
 | `elmina-map.json` | OSM-derived Elmina geometry snapshot |
 | `v2-ilham-roads.json` | 9 November 2026 OSM road geometry for the Ilham-area priority overlay |
-| `report.html`, `report.js` | Coordinate-based resident report form |
+| `sdp-app.html` | Owner-app view with an in-phone resident report flow |
 | `static-api.js` | Browser storage adapter for this static site |
-| `sdp-app.html` | Proposed owner-app integration view |
 | `assets/` | Teduh vector logo, source PNG, and visual comparison |
 | `vendor/` | Local Leaflet files and license |
 | `source-ref/` | Spoken pitch script reference |
