@@ -5,7 +5,7 @@ import { createAreaHouses } from './v2-houses.mjs';
 import { generateResidentRoutes } from './v2-resident-routes.mjs';
 import { startBudgetAnimation } from './v2-budget-animation.mjs';
 import { treeMix, planItems, fullPlanCost, planForBudget } from './v2-street-plan.mjs';
-import { ilhamAreaBounds, inIlhamArea, streetGeometry, streetMidpoint, priorityFactors, priorityAt, priorityColor } from './v2-street-priority.mjs';
+import { inIlhamArea, streetGeometry, streetMidpoint, priorityFactors, priorityAt, priorityColor } from './v2-street-priority.mjs';
 import { createWorkspace } from './v2-workspace.mjs';
 
 const timeSlider = document.getElementById('time-slider');
@@ -31,14 +31,11 @@ const edgeIndicators = document.getElementById('priority-edge-indicators');
 const mapStatus = document.getElementById('map-status');
 const sunToggle = document.getElementById('sun-toggle');
 const buildingHeight = 6;
-const ilhamCheckpoint = document.getElementById('ilham-checkpoint');
-const frekuensiCheckpoint = document.getElementById('frekuensi-checkpoint');
 const satelliteToggle = document.getElementById('satellite-toggle');
 const satelliteMapElement = document.getElementById('satellite-map');
 const centreCoordinates = document.getElementById('map-centre-coordinates');
 const centreValue = document.getElementById('map-centre-value');
 const tiltToggle = document.getElementById('tilt-toggle');
-const frekuensiBounds = [[101.5137, 3.18885], [101.51635, 3.18985]];
 const defaultCenter = [101.5183154, 3.1854984];
 const defaultZoom = 17;
 const ilhamStreetName = 'Jalan Elmina Ilham 3';
@@ -87,7 +84,6 @@ const datePart = type => dateParts.find(part => part.type === type).value;
 const sunDate = `${datePart('year')}-${datePart('month')}-${datePart('day')}`;
 
 let shadowBuildings = [];
-let ilhamRoad;
 let googleMap;
 let googleShadows = [];
 let googleSelection;
@@ -572,7 +568,6 @@ async function loadMap() {
     mappedPedestrianRoads = priorityRoads.filter(road =>
       ['footway', 'path'].includes(road.kind));
     residentRoutes = generateResidentRoutes(mappedPedestrianRoads, streetGeometry);
-    ilhamRoad = priorityRoads.find(road => road.name === ilhamStreetName);
     priorityRoadById = new Map(priorityRoads.map(road => [road.id, road]));
     await mapReady;
     map.addLayer({ id: 'sky-tone-wash', type: 'background',
@@ -703,7 +698,6 @@ async function loadMap() {
     });
     map.on('mouseenter', 'street-priority-hit', () => { map.getCanvas().style.cursor = 'pointer'; });
     map.on('mouseleave', 'street-priority-hit', () => { map.getCanvas().style.cursor = ''; });
-    ilhamCheckpoint.disabled = !ilhamRoad;
     map.jumpTo({ center: defaultCenter, zoom: defaultZoom, pitch: 0, bearing: 0 });
     for (const label of streetLabelElements) label.hidden = map.getZoom() < 15;
     renderShadows();
@@ -724,19 +718,6 @@ async function loadMap() {
   }
 }
 
-frekuensiCheckpoint.addEventListener('click', () => {
-  if (!streetDetail.hidden) hideStreetDetail(false);
-  if (satelliteActive) googleMap.fitBounds({ west: frekuensiBounds[0][0], south: frekuensiBounds[0][1],
-    east: frekuensiBounds[1][0], north: frekuensiBounds[1][1] }, 48);
-  else map.fitBounds(frekuensiBounds, { padding: 48, maxZoom: 18 });
-});
-ilhamCheckpoint.addEventListener('click', () => {
-  if (!ilhamRoad) return;
-  if (!streetDetail.hidden) hideStreetDetail(false);
-  if (satelliteActive) googleMap.fitBounds({ west: ilhamAreaBounds[0][0], south: ilhamAreaBounds[0][1],
-    east: ilhamAreaBounds[1][0], north: ilhamAreaBounds[1][1] }, 36);
-  else map.fitBounds(ilhamAreaBounds, { padding: 36, pitch: 0, bearing: 0 });
-});
 tiltToggle.addEventListener('click', () => setTilted(tiltToggle.getAttribute('aria-pressed') !== 'true'));
 window.addEventListener('resize', () => {
   if (!streetDetail.hidden && selectedPosition) focusStreet(selectedPosition, 0);

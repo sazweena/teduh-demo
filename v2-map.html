@@ -16,15 +16,13 @@
   <main class="workspace">
     <header class="toolbar" aria-label="Map controls">
       <div class="brand"><img src="./assets/teduh-icon-navbar.svg" width="35" height="35" alt=""><span>Teduh</span></div>
-      <nav class="map-checkpoints" aria-label="Map checkpoints">
-        <button id="ilham-checkpoint" type="button" aria-label="Show streets around Jalan Elmina Ilham 3" disabled>Ilham area</button>
-        <button id="frekuensi-checkpoint" type="button" aria-label="Focus on Jalan Frekuensi U16/137">Frekuensi</button>
+      <div class="map-view-controls">
         <button id="tilt-toggle" type="button" aria-pressed="false">2.5D view</button>
-      </nav>
+      </div>
       <nav class="workspace-nav" aria-label="Workspace views">
-        <button id="changes-tab" type="button" aria-controls="workspace-panel" aria-pressed="false">Proposed changes <span id="changes-count">0</span></button>
-        <button id="reports-tab" type="button" aria-controls="workspace-panel" aria-pressed="false">Reports <span id="reports-count">0</span></button>
-        <a href="./sdp-app.html">Resident app</a>
+        <button id="changes-tab" type="button" aria-controls="workspace-panel" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M12 7v10M7 12h10"/></svg>Proposed changes <span id="changes-count">0</span></button>
+        <button id="reports-tab" type="button" aria-controls="workspace-panel" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2h9l4 4v16H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z"/><path d="M14 2v5h5M8 12h8M8 16h8"/></svg>Reports <span id="reports-count">0</span></button>
+        <a href="./sdp-app.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M10 18h4"/></svg>Resident app</a>
       </nav>
       <div class="time-control">
         <label for="time-slider">Time of day <output id="time-output" for="time-slider">12:00 PM</output></label>

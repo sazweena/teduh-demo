@@ -10,10 +10,9 @@ button{cursor:pointer}
 .toolbar{z-index:2;display:flex;align-items:center;gap:22px;min-height:78px;padding:13px 24px;background:#f5f4ee;border-bottom:1px solid #d8ded7}
 .brand{display:flex;align-items:center;gap:9px;flex:none;font-family:"Bricolage Grotesque","Segoe UI",sans-serif;font-size:22px;font-weight:800;letter-spacing:-.025em;white-space:nowrap}
 .brand img{display:block;object-fit:contain}
-.map-checkpoints{display:flex;align-items:center;gap:6px;flex:none}
-.map-checkpoints button{border:1px solid #cbd8cf;border-radius:8px;background:#fff;color:#194a3a;padding:8px 11px;font-size:12px;font-weight:700;line-height:normal;white-space:nowrap}
-.map-checkpoints button:hover:not(:disabled){background:#e4eee7;border-color:#7eaa94}
-.map-checkpoints button:disabled{opacity:.5;cursor:wait}
+.map-view-controls{display:flex;align-items:center;gap:6px;flex:none}
+.map-view-controls button{border:1px solid #cbd8cf;border-radius:8px;background:#fff;color:#194a3a;padding:8px 11px;font-size:12px;font-weight:700;line-height:normal;white-space:nowrap}
+.map-view-controls button:hover:not(:disabled){background:#e4eee7;border-color:#7eaa94}
 .time-control{width:260px;flex:none;margin-left:auto}
 .time-control label{display:flex;align-items:baseline;justify-content:space-between;gap:10px;font-size:12px;font-weight:700}
 .time-slider-row{display:flex;align-items:center;gap:10px}
@@ -152,11 +151,12 @@ input[type=range]{display:block;width:100%;height:16px;margin:4px 0 1px;accent-c
 .maplibregl-map{font-family:"Figtree","Segoe UI",sans-serif;background:#e8ece5}
 .maplibregl-ctrl-attrib{font-size:10px!important}
 .maplibregl-ctrl-bottom-right{bottom:8px;right:8px}
-.map-checkpoints button[aria-pressed="true"]{background:#d5e8db;border-color:#7eaa94}
+.map-view-controls button[aria-pressed="true"]{background:#d5e8db;border-color:#7eaa94}
 .workspace-nav{display:flex;align-items:center;gap:6px;flex:none}
-.workspace-nav :is(button,a){display:inline-flex;align-items:center;min-height:40px;padding:8px 11px;border:1px solid #cbd8cf;border-radius:8px;background:#fff;color:#173029;font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap}
+.workspace-nav :is(button,a){display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:8px 11px;border:1px solid #cbd8cf;border-radius:8px;background:#fff;color:#173029;font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap}
+.workspace-nav svg{width:16px;height:16px;flex:none}
 .workspace-nav button[aria-pressed="true"]{border-color:#7eaa94;background:#d5e8db}
-.workspace-nav span{margin-left:4px;color:#52665b;font-variant-numeric:tabular-nums}
+.workspace-nav span{color:#52665b;font-variant-numeric:tabular-nums}
 .workspace-panel{position:absolute;z-index:503;top:0;right:0;bottom:0;display:flex;flex-direction:column;width:min(380px,calc(100% - 72px));background:#f5f4ee;box-shadow:-8px 0 24px rgba(22,47,38,.16);color:#173029}
 .workspace-panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:19px 20px;border-bottom:1px solid #d8ded7}
 .workspace-panel-head h2{margin:0;font:800 21px/1.2 "Bricolage Grotesque","Segoe UI",sans-serif}
@@ -193,6 +193,6 @@ textarea.workspace-field{resize:vertical;line-height:1.45}
 .budget-result-footer #budget-result-save{border-color:#0b715c;background:#0b715c;color:#fff}
 .budget-result-footer #budget-result-save:disabled{opacity:.5;cursor:default}
 @media(max-width:1600px){.toolbar{flex-wrap:wrap}}
-@media(max-width:1200px){.toolbar{gap:12px;padding:12px 16px}.time-control{width:190px}.map-checkpoints button{padding:7px 8px}}
+@media(max-width:1200px){.toolbar{gap:12px;padding:12px 16px}.time-control{width:190px}.map-view-controls button{padding:7px 8px}}
 @media(max-width:1120px){.toolbar{flex-wrap:wrap}.time-control{margin-left:auto}}
-@media(max-width:700px){.toolbar{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 12px;padding:10px 14px}.brand{grid-column:1;grid-row:1;font-size:17px}.brand img{width:27px;height:27px}.time-control{grid-column:2;grid-row:1;width:100%;min-width:0;margin-left:0}.time-control label{font-size:11px}.map-checkpoints{grid-column:1/-1;grid-row:2;overflow-x:auto}.workspace-nav{grid-column:1/-1;grid-row:3;overflow-x:auto}.sun-toggle{grid-column:1;grid-row:4}.satellite-toggle{grid-column:2;grid-row:4}.street-detail{top:auto;bottom:0;width:100%;height:min(65vh,380px);max-height:100%;gap:7px;border-left:0;border-top:1px solid #d8ded7;border-radius:16px 16px 0 0;padding:13px 18px;box-shadow:0 -8px 24px rgba(22,47,38,.16)}.workspace-panel{top:auto;bottom:0;width:100%;height:min(68dvh,520px);border-radius:16px 16px 0 0;box-shadow:0 -8px 24px rgba(22,47,38,.16)}.street-detail h2{margin-top:2px;font-size:17px}.street-detail-close{top:10px;right:14px}.street-formula{gap:5px}.formula-box{min-height:74px;padding:6px 4px}.priority-legend{top:12px;left:14px;gap:6px;flex-wrap:wrap;white-space:normal;font-size:10px}.priority-legend strong{width:100%}.map-status{left:14px;bottom:110px}}
+@media(max-width:700px){.toolbar{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 12px;padding:10px 14px}.brand{grid-column:1;grid-row:1;font-size:17px}.brand img{width:27px;height:27px}.time-control{grid-column:2;grid-row:1;width:100%;min-width:0;margin-left:0}.time-control label{font-size:11px}.map-view-controls{grid-column:1/-1;grid-row:2;overflow-x:auto}.workspace-nav{grid-column:1/-1;grid-row:3;overflow-x:auto}.sun-toggle{grid-column:1;grid-row:4}.satellite-toggle{grid-column:2;grid-row:4}.street-detail{top:auto;bottom:0;width:100%;height:min(65vh,380px);max-height:100%;gap:7px;border-left:0;border-top:1px solid #d8ded7;border-radius:16px 16px 0 0;padding:13px 18px;box-shadow:0 -8px 24px rgba(22,47,38,.16)}.workspace-panel{top:auto;bottom:0;width:100%;height:min(68dvh,520px);border-radius:16px 16px 0 0;box-shadow:0 -8px 24px rgba(22,47,38,.16)}.street-detail h2{margin-top:2px;font-size:17px}.street-detail-close{top:10px;right:14px}.street-formula{gap:5px}.formula-box{min-height:74px;padding:6px 4px}.priority-legend{top:12px;left:14px;gap:6px;flex-wrap:wrap;white-space:normal;font-size:10px}.priority-legend strong{width:100%}.map-status{left:14px;bottom:110px}}
