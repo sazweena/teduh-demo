@@ -25,7 +25,7 @@
     status, headers: { 'Content-Type': 'application/json' },
   }));
   const validPoint = point => Array.isArray(point) && point.length === 2 &&
-    point.every(Number.isFinite) && point[0] >= 101.495 && point[0] <= 101.518 &&
+    point.every(Number.isFinite) && point[0] >= 101.495 && point[0] <= 101.5221 &&
     point[1] >= 3.175 && point[1] <= 3.190;
 
   window.fetch = (resource, options = {}) => {

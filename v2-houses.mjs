@@ -121,6 +121,8 @@ function residentialRoad(road) {
 // The aerial reference shows outer streets bounding the neighbourhood.
 // Place a row on their developed side; inner streets can carry two rows.
 function sidesForRoad(road, centerline, normal) {
+  // U16/118 loops around a green strip. The right-hand side of its path is open space.
+  if (road.name === 'Jalan Frekuensi U16/118') return [1];
   if (!/^Jalan Elmina Ilham [24]$/.test(road.name)
     && !/^Jalan Frekuensi U16\/(113|120|121)$/.test(road.name)) return [-1, 1];
   const neighbourhood = toLocal([101.5178, 3.1867]);

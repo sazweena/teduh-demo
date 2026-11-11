@@ -6,6 +6,7 @@ import { generateResidentRoutes } from './v2-resident-routes.mjs';
 import { startBudgetAnimation } from './v2-budget-animation.mjs';
 import { treeMix, planItems, fullPlanCost, planForBudget } from './v2-street-plan.mjs';
 import { ilhamAreaBounds, inIlhamArea, streetGeometry, streetMidpoint, priorityFactors, priorityAt, priorityColor } from './v2-street-priority.mjs';
+import { createWorkspace } from './v2-workspace.mjs';
 
 const timeSlider = document.getElementById('time-slider');
 const timeOutput = document.getElementById('time-output');
@@ -104,6 +105,7 @@ let selectedPosition;
 let selectedBudget = 70000;
 let stopBudgetAnimation;
 let budgetAnimationComplete = false;
+let workspace;
 const money = amount => `RM${amount.toLocaleString('en-MY')}`;
 const budgetStorageKey = road => `teduh-v2-budget:${road.name === 'Unnamed mapped way' ? road.id : road.name}`;
 function loadStreetBudget(road) {
@@ -291,6 +293,7 @@ function hideStreetDetail(recenter = true) {
 }
 
 function showStreet(road, position = streetMidpoint([road]) || road.coordinates[Math.floor(road.coordinates.length / 2)]) {
+  workspace?.close();
   loadStreetBudget(road);
   selectedRoad = road;
   selectedPosition = position;
@@ -356,6 +359,7 @@ function setTilted(tilted) {
 }
 
 function setSatellite(active) {
+  if (active && workspace?.isPlacing()) workspace.cancelPlacement();
   if (!googleMap) return;
   satelliteActive = active;
   satelliteToggle.checked = active;
@@ -538,6 +542,7 @@ async function loadSatellite(googleMapsKey, walkableRoads) {
     });
     renderShadows();
     renderPriority();
+    workspace?.syncGoogle(googleMap);
 }
 
 async function loadMap() {
@@ -673,7 +678,17 @@ async function loadMap() {
     map.addSource('selected-road', { type: 'geojson', data: emptyCollection() });
     map.addLayer({ id: 'selected-road-line', type: 'line', source: 'selected-road',
       paint: { 'line-color': '#b55332', 'line-width': 6, 'line-opacity': 1 } });
+    workspace = createWorkspace({ map, roads: priorityRoads, onOpen: () => {
+      if (!streetDetail.hidden) hideStreetDetail(false);
+    }, onEditPlan: roadId => {
+      const road = priorityRoadById.get(roadId);
+      if (!road) return;
+      showStreet(road);
+      streetDetail.querySelector('.street-budget-button')?.click();
+    } });
     map.on('click', 'walkable-road-hit', event => {
+      if (workspace.isPlacing()) return;
+      if (map.queryRenderedFeatures(event.point, { layers: ['saved-change-points', 'saved-report-points'] }).length) return;
       const properties = event.features?.[0]?.properties;
       const road = walkableRoads.find(item => item.id === properties?.id);
       if (road) showStreet(road);
@@ -681,6 +696,8 @@ async function loadMap() {
     map.on('mouseenter', 'walkable-road-hit', () => { map.getCanvas().style.cursor = 'pointer'; });
     map.on('mouseleave', 'walkable-road-hit', () => { map.getCanvas().style.cursor = ''; });
     map.on('click', 'street-priority-hit', event => {
+      if (workspace.isPlacing()) return;
+      if (map.queryRenderedFeatures(event.point, { layers: ['saved-change-points', 'saved-report-points'] }).length) return;
       const road = priorityRoads.find(item => item.id === event.features?.[0]?.properties?.id);
       if (road) showStreet(road);
     });
@@ -784,6 +801,7 @@ budgetProcessAction.addEventListener('click', () => {
 });
 function renderBudgetResult() {
   const plan = planForBudget(selectedBudget);
+  document.getElementById('budget-result-save').disabled = plan.included.length === 0;
   const previewButton = document.getElementById('budget-result-preview');
   previewButton.hidden = selectedRoad.name !== ilhamStreetName || plan.included.length === 0;
   const previewError = document.getElementById('budget-result-preview-error');
@@ -867,6 +885,16 @@ function enter3dPreview() {
 document.getElementById('budget-result-close').addEventListener('click', closeBudgetResult);
 document.getElementById('budget-result-map').addEventListener('click', closeBudgetResult);
 document.getElementById('budget-result-preview').addEventListener('click', enter3dPreview);
+document.getElementById('budget-result-save').addEventListener('click', () => {
+  const error = document.getElementById('budget-result-preview-error');
+  try {
+    workspace.savePlan(selectedRoad, selectedBudget, planForBudget(selectedBudget));
+    budgetResult.hidden = true;
+  } catch (issue) {
+    error.textContent = issue.message;
+    error.hidden = false;
+  }
+});
 document.getElementById('budget-result-adjust').addEventListener('click', () => {
   closeBudgetResult();
   streetDetail.querySelector('.street-budget-button')?.click();

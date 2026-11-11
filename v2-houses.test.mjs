@@ -14,6 +14,10 @@ const roofs = [
   ...frekuensiRoofs(originalBlocks),
 ];
 const houses = createAreaHouses(area.roads, roofs);
+const frekuensi118 = houses.filter(house => house.id.startsWith('generated/way/604829786/'));
+assert.ok(frekuensi118.length > 0);
+assert.ok(frekuensi118.every(house => house.id.endsWith('/1')),
+  'Jalan Frekuensi U16/118 must leave the inner green strip clear');
 assert.ok(houses.filter(house => house.kind === 'generated').length > 400);
 assert.ok(houses.filter(house => house.kind === 'mapped').length > 100);
 assert.equal(new Set(houses.map(house => house.id)).size, houses.length);
