@@ -2,7 +2,7 @@
 
 Team Simelarps, Township of Tomorrow (Planet), Sime Darby Property University Hackathon 2026.
 
-Teduh helps township planners inspect walking heat, compare fixes within a budget, and hear from residents. The [pitch script](source-ref/simelarps-teduh-pitch-script-2026-10-22.md) is the spoken reference for the presentation.
+Teduh helps township planners inspect walking heat, compare fixes within a budget, and hear from residents. 
 
 ## Open the planning workspace
 
