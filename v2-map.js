@@ -8,6 +8,8 @@ import { treeMix, fixedPlanOptions, fixedPlanForBudget } from './v2-street-plan.
 import { inIlhamArea, streetGeometry, streetMidpoint, priorityFactors, priorityAt, priorityColor } from './v2-street-priority.mjs';
 import { createWorkspace } from './v2-workspace.mjs';
 import { mapConcerns } from './v2-report-references.mjs';
+import { activityIssues, nextActivity } from './v2-activity.mjs';
+import { walkingDestinations } from './v2-destinations.mjs';
 
 const timeSlider = document.getElementById('time-slider');
 const timeOutput = document.getElementById('time-output');
@@ -34,9 +36,12 @@ const rankingList = document.getElementById('priority-ranking-list');
 const rankingTime = document.getElementById('priority-ranking-time');
 const edgeIndicators = document.getElementById('priority-edge-indicators');
 const mapStatus = document.getElementById('map-status');
+const activityToast = document.getElementById('activity-toast');
+const activityToastMessage = document.getElementById('activity-toast-message');
 const sunToggle = document.getElementById('sun-toggle');
 const buildingHeight = 6;
 const satelliteToggle = document.getElementById('satellite-toggle');
+const destinationToggle = document.getElementById('destination-toggle');
 const satelliteMapElement = document.getElementById('satellite-map');
 const centreCoordinates = document.getElementById('map-centre-coordinates');
 const centreValue = document.getElementById('map-centre-value');
@@ -94,6 +99,9 @@ let googleShadows = [];
 let googleSelection;
 let googlePriorityLayer;
 let googleResidentRoutesLayer;
+let googleDestinationInfo;
+let streetDestinationInfo;
+const destinationElements = [];
 let satelliteActive = false;
 let priorityRoads = [];
 let mappedPedestrianRoads = [];
@@ -112,6 +120,108 @@ let budgetCounterTimeout;
 let budgetRevealFrame;
 let budgetResultRevealTimeout;
 let workspace;
+const activitySupport = new Map(mapConcerns.map(concern => [concern.roadName, concern.startingSupportCount || 0]));
+const concernByRoad = new Map(mapConcerns.map(concern => [concern.roadName, concern]));
+const reportCountByRoad = new Map();
+const browserReportCountByRoad = new Map();
+const browserSupportByRoad = new Map();
+const browserConcernByRoad = new Map();
+const seededReportLocationsByRoad = new Map();
+const browserReportLocationsByRoad = new Map();
+for (const concern of mapConcerns) {
+  reportCountByRoad.set(concern.roadName, (reportCountByRoad.get(concern.roadName) || 0) + 1);
+}
+const supportLabel = count => `Support: ${count}`;
+let activityToastTimeout;
+let activitySoundContext;
+const streetInputs = road => ({
+  reportCount: (reportCountByRoad.get(road.name) || 0) + (browserReportCountByRoad.get(road.name) || 0),
+  supportCount: (activitySupport.get(road.name) || 0) + (browserSupportByRoad.get(road.name) || 0),
+  concernKind: browserConcernByRoad.get(road.name) || concernByRoad.get(road.name)?.kind || null,
+  reportLocations: [
+    ...(seededReportLocationsByRoad.get(road.name) || []),
+    ...(browserReportLocationsByRoad.get(road.name) || []),
+  ],
+});
+const streetPriority = (road, hour) => priorityAt(road, hour, streetInputs(road));
+function updateBrowserReportSignals(reports) {
+  browserReportCountByRoad.clear();
+  browserSupportByRoad.clear();
+  browserConcernByRoad.clear();
+  browserReportLocationsByRoad.clear();
+  for (const report of reports) {
+    const name = report.road_name;
+    if (!name) continue;
+    browserReportCountByRoad.set(name, (browserReportCountByRoad.get(name) || 0) + 1);
+    browserSupportByRoad.set(name, (browserSupportByRoad.get(name) || 0) + Math.max(0, Number(report.me_too_count) || 0));
+    if (!browserConcernByRoad.has(name)) browserConcernByRoad.set(name, report.kind);
+    if (Array.isArray(report.coordinates) && report.coordinates.length === 2
+      && report.coordinates.every(Number.isFinite)) {
+      if (!browserReportLocationsByRoad.has(name)) browserReportLocationsByRoad.set(name, []);
+      browserReportLocationsByRoad.get(name).push(report.coordinates);
+    }
+  }
+  renderPriority();
+}
+function playActivitySound() {
+  if (!activitySoundContext || activitySoundContext.state !== 'running') return;
+  const oscillator = activitySoundContext.createOscillator();
+  const gain = activitySoundContext.createGain();
+  const start = activitySoundContext.currentTime;
+  oscillator.type = 'sine';
+  oscillator.frequency.setValueAtTime(660, start);
+  oscillator.frequency.setValueAtTime(880, start + .08);
+  gain.gain.setValueAtTime(.0001, start);
+  gain.gain.exponentialRampToValueAtTime(.07, start + .012);
+  gain.gain.exponentialRampToValueAtTime(.0001, start + .18);
+  oscillator.connect(gain).connect(activitySoundContext.destination);
+  oscillator.start(start);
+  oscillator.stop(start + .2);
+}
+function dismissActivityToast() {
+  clearTimeout(activityToastTimeout);
+  activityToast.hidden = true;
+}
+document.getElementById('activity-toast-close').addEventListener('click', dismissActivityToast);
+function armActivitySound() {
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+  if (AudioContext) {
+    activitySoundContext ||= new AudioContext();
+    activitySoundContext.resume().catch(() => {});
+  }
+}
+document.addEventListener('pointerdown', armActivitySound, { once: true });
+document.addEventListener('keydown', armActivitySound, { once: true });
+function showActivityToast(name, concern) {
+  dismissActivityToast();
+  const street = document.createElement('strong');
+  street.className = 'activity-toast-street';
+  street.textContent = concern.roadName;
+  activityToastMessage.replaceChildren(
+    document.createTextNode(`${name} raised the same concern about ${activityIssues[concern.kind] || 'the walking route'} on `),
+    street,
+    document.createTextNode('.'),
+  );
+  activityToast.hidden = false;
+  playActivitySound();
+  activityToastTimeout = setTimeout(dismissActivityToast, 5000);
+}
+function addIllustrativeActivity() {
+  if (document.hidden || !priorityPins.length) return;
+  const available = mapConcerns.filter(concern => priorityPins.some(pin => pin.road.name === concern.roadName));
+  const activity = nextActivity(available);
+  if (!activity) return;
+  const roadName = activity.concern.roadName;
+  activitySupport.set(roadName, (activitySupport.get(roadName) || 0) + 1);
+  renderPriority();
+  workspace?.refreshIllustrativeSupport();
+  if (selectedRoad?.name === roadName) {
+    const support = streetDetail.querySelector('[data-report-support]');
+    if (support) support.textContent = supportLabel(activitySupport.get(roadName));
+  }
+  showActivityToast(activity.name, activity.concern);
+}
+setInterval(addIllustrativeActivity, 20000);
 const money = amount => `RM${amount.toLocaleString('en-MY')}`;
 const budgetStorageKey = road => `teduh-v2-budget:${road.name === 'Unnamed mapped way' ? road.id : road.name}`;
 function loadStreetBudget(road) {
@@ -134,14 +244,10 @@ function createPriorityPin(name) {
   pin.setAttribute('aria-label', report ? `Open resident report on ${name}` : `Open details for highest-priority street: ${name}`);
   const shape = document.createElement('span');
   shape.className = 'priority-pin-shape';
-  if (report) {
-    shape.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5c-1.3 0-2.5-.3-3.5-.9L4 20l1.9-5A7.5 7.5 0 1 1 20 11.5Z"/><path d="M9 11.5h7"/></svg>';
-  } else {
-    const icon = document.createElement('span');
-    icon.textContent = '!';
-    icon.setAttribute('aria-hidden', 'true');
-    shape.append(icon);
-  }
+  const icon = document.createElement('span');
+  icon.textContent = '!';
+  icon.setAttribute('aria-hidden', 'true');
+  shape.append(icon);
   pin.append(shape);
   return pin;
 }
@@ -179,9 +285,9 @@ function renderPriority() {
   source.setData(collection(priorityRoads.map(road => feature(road,
     streetGeometry(road),
     { id: road.id, name: road.name === 'Unnamed mapped way' ? '' : road.name,
-      color: priorityColor(priorityAt(road, hour)) }))));
+      color: priorityColor(streetPriority(road, hour)) }))));
   if (googlePriorityLayer) googlePriorityLayer.setStyle(feature => ({
-    strokeColor: priorityColor(priorityAt(priorityRoadById.get(feature.getProperty('id')), hour)),
+    strokeColor: priorityColor(streetPriority(priorityRoadById.get(feature.getProperty('id')), hour)),
     strokeWeight: 6, strokeOpacity: .9, clickable: true, zIndex: 12,
   }));
   for (const pin of priorityPins) {
@@ -196,30 +302,85 @@ function renderPriority() {
 
 function updateStreetPriority() {
   const hour = Number(timeSlider.value);
-  const factors = priorityFactors(selectedRoad, hour);
-  const score = priorityAt(selectedRoad, hour);
+  const inputs = streetInputs(selectedRoad);
+  const factors = priorityFactors(selectedRoad, hour, inputs);
+  const score = streetPriority(selectedRoad, hour);
   streetDetail.querySelector('[data-priority-score]').textContent = score.toFixed(2);
   streetDetail.querySelector('[data-priority-hour]').textContent = formatHour(hour);
-  const rankedRoads = [...priorityRoads].sort((a, b) => priorityAt(b, hour) - priorityAt(a, hour));
+  const rankedRoads = [...priorityRoads].sort((a, b) => streetPriority(b, hour) - streetPriority(a, hour));
   streetDetail.querySelector('[data-priority-rank]').textContent = `#${rankedRoads.indexOf(selectedRoad) + 1} of ${rankedRoads.length} streets`;
   streetDetail.querySelector('[data-walkers-factor]').textContent = factors.walkers.toFixed(2);
-  streetDetail.querySelector('[data-walkers-detail]').textContent = `${factors.walkerCount}/h`;
-  streetDetail.querySelector('[data-exposure-factor]').textContent = factors.exposure.toFixed(2);
-  streetDetail.querySelector('[data-exposure-detail]').textContent = `${Math.round(factors.exposure * 100)}% at ${formatHour(hour)}`;
-  streetDetail.querySelector('[data-vulnerable-factor]').textContent = factors.vulnerable.toFixed(2);
-  streetDetail.querySelector('[data-vulnerable-detail]').textContent = selectedRoad.name === 'Jalan Elmina Ilham 3' ? 'school route' : 'resident routes';
-  streetDetail.querySelector('[data-crossing-factor]').textContent = factors.crossing.toFixed(2);
-  streetDetail.querySelector('[data-crossing-detail]').textContent = factors.crossingDistance ? `${factors.crossingDistance} m to crossing` : 'crossing gap';
+  streetDetail.querySelector('[data-walkers-detail]').textContent = `~${factors.walkerCount}/h · ${factors.reportCount} report${factors.reportCount === 1 ? '' : 's'} · ${factors.supportCount} support`;
+  streetDetail.querySelector('[data-condition-label]').textContent = factors.conditionLabel;
+  streetDetail.querySelector('[data-condition-factor]').textContent = factors.condition.toFixed(2);
+  streetDetail.querySelector('[data-condition-detail]').textContent = inputs.concernKind === 'hot' || inputs.concernKind === 'dark'
+    ? `at ${formatHour(hour)}` : 'street issue weight';
+  streetDetail.querySelector('[data-destinations-factor]').textContent = factors.destinations.toFixed(2);
+  streetDetail.querySelector('[data-destinations-detail]').textContent =
+    `${factors.nearbyDestinations} within 1 km · nearest: ${factors.nearestDestination} (${Math.round(factors.nearestDestinationMetres)} m)`;
 }
+
+function destinationDetails(place) {
+  const detail = document.createElement('div');
+  detail.className = 'destination-detail';
+  const category = document.createElement('small');
+  category.textContent = place.category;
+  const name = document.createElement('strong');
+  name.textContent = place.name;
+  const source = document.createElement('a');
+  source.href = place.source;
+  source.target = '_blank';
+  source.rel = 'noopener noreferrer';
+  source.textContent = 'View location on map';
+  detail.append(category, name, source);
+  return detail;
+}
+
+const destinationIconPaths = {
+  'laman-nadi': '<path d="M3 10 5 4h14l2 6M3 10h18M4 10v10h16V10M8 20v-6h8v6M7 10v3m5-3v3m5-3v3"/>',
+  'surau-elmina-gardens': '<path d="M4 20v-8c0-4 8-7 8-7s8 3 8 7v8M2 20h20M10 20v-5h4v5M12 2v3M4 12H2V7h2"/>',
+  'my-health-clinic': '<path d="M4 20V5h16v15M2 20h20M9 20v-4h6v4M12 8v6M9 11h6"/>',
+  'frekuensi-119-park': '<path d="M12 21v-6M8 21h8M12 3 5 13h4l-4 4h14l-4-4h4L12 3Z"/>',
+  'frekuensi-118-park': '<path d="M12 21v-6M8 21h8M12 3 5 13h4l-4 4h14l-4-4h4L12 3Z"/>',
+  'elmina-urban-park': '<path d="M12 21v-6M8 21h8M12 3 5 13h4l-4 4h14l-4-4h4L12 3Z"/>',
+  'elmina-lakeside-mall': '<path d="M3 21h18M5 21V6l7-3 7 3v15M5 10h14M9 10v11m6-11v11M9 15h6"/>',
+  'jaya-grocer': '<path d="M2 4h3l2 11h12l2-8H6M8 15l-1 3h13M10 21h.01M18 21h.01"/>',
+};
+
+function createDestinationMarker(place) {
+  const marker = document.createElement('button');
+  marker.type = 'button';
+  marker.className = `destination-marker destination-${place.category.toLowerCase()}`;
+  marker.title = place.name;
+  marker.setAttribute('aria-label', `${place.name}, ${place.category}. Open place details`);
+  marker.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${destinationIconPaths[place.id]}</svg>`;
+  destinationElements.push(marker);
+  return marker;
+}
+
+function openStreetDestination(place) {
+  streetDestinationInfo?.remove();
+  streetDestinationInfo = new maplibregl.Popup({ offset: 22, closeButton: true, maxWidth: '260px' })
+    .setLngLat(place.coordinates).setDOMContent(destinationDetails(place)).addTo(map);
+}
+
+function updateDestinations() {
+  for (const marker of destinationElements) marker.hidden = !destinationToggle.checked;
+  if (!destinationToggle.checked) {
+    streetDestinationInfo?.remove();
+    googleDestinationInfo?.close();
+  }
+}
+destinationToggle.addEventListener('change', updateDestinations);
 
 function renderRanking(hour) {
   rankingTime.value = formatHour(hour);
   if (!priorityPins.length) return;
   const ranked = [...priorityPins].sort((a, b) =>
-    priorityAt(b.road, hour) - priorityAt(a.road, hour) || a.road.name.localeCompare(b.road.name));
+    streetPriority(b.road, hour) - streetPriority(a.road, hour) || a.road.name.localeCompare(b.road.name));
   const rows = document.createDocumentFragment();
   for (const [index, entry] of ranked.entries()) {
-    const score = priorityAt(entry.road, hour);
+    const score = streetPriority(entry.road, hour);
     const row = document.createElement('li');
     const open = document.createElement('button');
     open.type = 'button';
@@ -392,27 +553,23 @@ function showStreet(road, position = streetMidpoint([road]) || road.coordinates[
     formula.className = 'street-formula';
     formula.setAttribute('role', 'group');
     formula.setAttribute('aria-label', 'Priority score calculation');
-    formula.innerHTML = '<div class="formula-factors"><div class="formula-box formula-walkers"><span>Walkers</span><strong data-walkers-factor></strong><small data-walkers-detail></small></div><div class="formula-box formula-exposure"><span>In sun</span><strong data-exposure-factor></strong><small data-exposure-detail></small></div><div class="formula-box formula-vulnerable"><span>Kids / elderly</span><strong data-vulnerable-factor></strong><small data-vulnerable-detail></small></div><div class="formula-box formula-crossing"><span>No crossing</span><strong data-crossing-factor></strong><small data-crossing-detail></small></div></div><div class="formula-equation" aria-hidden="true">Multiply all four factors</div><div class="formula-box formula-score"><span>Priority score</span><strong data-priority-score></strong><small data-priority-rank></small></div><p class="formula-note">Each factor runs from 0 to 1. A street with no walkers scores 0.</p>';
+    formula.innerHTML = '<div class="formula-factors"><div class="formula-box formula-walkers"><span>Walkers</span><strong data-walkers-factor></strong><small data-walkers-detail></small></div><div class="formula-box formula-condition"><span data-condition-label></span><strong data-condition-factor></strong><small data-condition-detail></small></div><div class="formula-box formula-destinations"><span>Walking hotspots</span><strong data-destinations-factor></strong><small data-destinations-detail></small></div></div><div class="formula-equation" aria-hidden="true">Multiply all three factors</div><div class="formula-box formula-score"><span>Priority score</span><strong data-priority-score></strong><small data-priority-rank></small></div><p class="formula-note">Each factor runs from 0 to 1.</p>';
     const report = mapConcerns.find(item => item.roadName === road.name);
     const reportCard = document.createElement('section');
     if (report) {
       reportCard.className = 'street-report-card';
       const heading = document.createElement('h3');
-      heading.textContent = 'Street concern';
+      heading.textContent = 'Resident report';
       const source = document.createElement('p');
       source.className = 'street-report-source';
       source.textContent = report.sourceLabel;
+      const support = document.createElement('p');
+      support.className = 'street-report-support';
+      support.dataset.reportSupport = '';
+      support.textContent = supportLabel(activitySupport.get(road.name) || 0);
       const note = document.createElement('p');
       note.textContent = report.note;
-      reportCard.append(heading, source);
-      if (report.image) {
-        const image = document.createElement('img');
-        image.src = report.image;
-        image.alt = report.imageAlt;
-        const caption = document.createElement('small');
-        caption.textContent = 'Generated illustration';
-        reportCard.append(image, caption);
-      }
+      reportCard.append(heading, source, support);
       reportCard.append(note);
     }
     const budgetButton = document.createElement('button');
@@ -622,6 +779,38 @@ async function loadSatellite(googleMapsKey, walkableRoads) {
       }
     }
     for (const entry of priorityPins) new PriorityPin(entry);
+    googleDestinationInfo = new google.maps.InfoWindow();
+    class DestinationPin extends google.maps.OverlayView {
+      constructor(place) {
+        super();
+        this.place = place;
+        this.position = new google.maps.LatLng(place.coordinates[1], place.coordinates[0]);
+        this.setMap(googleMap);
+      }
+      onAdd() {
+        this.element = createDestinationMarker(this.place);
+        this.element.classList.add('google-destination-marker');
+        this.element.hidden = !destinationToggle.checked;
+        this.element.addEventListener('click', event => {
+          event.stopPropagation();
+          googleDestinationInfo.setContent(destinationDetails(this.place));
+          googleDestinationInfo.setPosition(this.position);
+          googleDestinationInfo.open({ map: googleMap });
+        });
+        this.getPanes().overlayMouseTarget.appendChild(this.element);
+      }
+      draw() {
+        const point = this.getProjection().fromLatLngToDivPixel(this.position);
+        this.element.style.left = `${point.x}px`;
+        this.element.style.top = `${point.y}px`;
+      }
+      onRemove() {
+        this.element.remove();
+        const index = destinationElements.indexOf(this.element);
+        if (index !== -1) destinationElements.splice(index, 1);
+      }
+    }
+    for (const place of walkingDestinations) new DestinationPin(place);
     googleMap.addListener('bounds_changed', updateEdgeIndicators);
     for (const building of shadowBuildings) new google.maps.Polygon({
       map: googleMap,
@@ -662,6 +851,11 @@ async function loadMap() {
       ['footway', 'path'].includes(road.kind));
     residentRoutes = generateResidentRoutes(mappedPedestrianRoads, streetGeometry);
     priorityRoadById = new Map(priorityRoads.map(road => [road.id, road]));
+    seededReportLocationsByRoad.clear();
+    for (const concern of mapConcerns) {
+      const point = concern.streetCenter || streetMidpoint(priorityRoads.filter(road => road.name === concern.roadName));
+      if (point) seededReportLocationsByRoad.set(concern.roadName, [point]);
+    }
     await mapReady;
     map.addLayer({ id: 'sky-tone-wash', type: 'background',
       paint: { 'background-color': '#ffffff', 'background-opacity': 0 } });
@@ -737,18 +931,21 @@ async function loadMap() {
       namedStreetGroups.get(road.name).push(road);
     }
     for (const roads of namedStreetGroups.values()) {
-      const position = streetMidpoint(roads);
+      const report = mapConcerns.find(item => item.roadName === roads[0].name);
+      const position = report?.streetCenter || streetMidpoint(roads);
       if (!position) continue;
       const mapElement = createPriorityPin(roads[0].name);
-      const report = mapConcerns.find(item => item.roadName === roads[0].name);
       mapElement.hidden = true;
       const edgeElement = document.createElement('button');
       edgeElement.type = 'button';
       edgeElement.className = 'priority-edge-indicator';
       if (report) {
         edgeElement.classList.add('priority-edge-report');
-        edgeElement.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5c-1.3 0-2.5-.3-3.5-.9L4 20l1.9-5A7.5 7.5 0 1 1 20 11.5Z"/><path d="M9 11.5h7"/></svg>';
-      } else edgeElement.textContent = '!';
+      }
+      const edgeIcon = document.createElement('span');
+      edgeIcon.textContent = '!';
+      edgeIcon.setAttribute('aria-hidden', 'true');
+      edgeElement.append(edgeIcon);
       edgeElement.hidden = true;
       edgeElement.setAttribute('aria-label', report ? `Show resident report on ${roads[0].name}` : `Show highest-priority street: ${roads[0].name}`);
       edgeElement.title = roads[0].name;
@@ -764,13 +961,23 @@ async function loadMap() {
       new maplibregl.Marker({ element: mapElement, anchor: 'bottom' })
         .setLngLat(position).addTo(map);
     }
+    for (const place of walkingDestinations) {
+      const marker = createDestinationMarker(place);
+      marker.addEventListener('click', event => {
+        event.stopPropagation();
+        openStreetDestination(place);
+      });
+      new maplibregl.Marker({ element: marker, anchor: 'bottom' })
+        .setLngLat(place.coordinates).addTo(map);
+    }
     map.on('zoomend', () => {
       for (const label of streetLabelElements) label.hidden = map.getZoom() < 15;
     });
     map.addSource('selected-road', { type: 'geojson', data: emptyCollection() });
     map.addLayer({ id: 'selected-road-line', type: 'line', source: 'selected-road',
       paint: { 'line-color': '#b55332', 'line-width': 6, 'line-opacity': 1 } });
-    workspace = createWorkspace({ map, roads: priorityRoads, onOpen: () => {
+    workspace = createWorkspace({ map, roads: priorityRoads, activitySupport,
+      onReportsChange: updateBrowserReportSignals, onOpen: () => {
       if (!streetDetail.hidden) hideStreetDetail(false);
     }, onEditPlan: roadId => {
       const road = priorityRoadById.get(roadId);
@@ -959,10 +1166,10 @@ budgetProcessAction.addEventListener('click', () => {
 function renderPlanOptions() {
   const options = document.getElementById('budget-plan-options');
   options.replaceChildren();
-  const planVisuals = {
-    a: '<circle cx="45" cy="43" r="17"/><circle cx="98" cy="43" r="17"/><circle cx="151" cy="43" r="17"/><circle cx="204" cy="43" r="17"/>',
-    b: '<path d="M22 24 78 24 50 56Z"/><path d="M92 24 148 24 120 56Z"/><path d="M162 24 218 24 190 56Z"/>',
-    c: '<circle cx="42" cy="43" r="17"/><circle cx="90" cy="43" r="17"/><path d="M116 24 168 24 142 56Z"/><path d="M182 57v27m10-27v27m10-27v27m10-27v27"/>',
+  const planImages = {
+    a: './assets/plan-a-young-trees.webp',
+    b: './assets/plan-b-shade-sails.webp',
+    c: './assets/plan-c-shade-crossing.webp',
   };
   for (const [index, option] of fixedPlanOptions.entries()) {
     const available = option.cost <= selectedBudget;
@@ -976,15 +1183,11 @@ function renderPlanOptions() {
     const visual = document.createElement('span');
     visual.className = `budget-plan-visual budget-plan-visual-${option.id}`;
     visual.setAttribute('aria-hidden', 'true');
-    if (option.id === 'a') {
-      const photo = document.createElement('img');
-      photo.src = './assets/plan-a-young-trees.webp';
-      photo.alt = '';
-      photo.loading = 'lazy';
-      visual.append(photo);
-    } else {
-      visual.innerHTML = `<svg viewBox="0 0 240 96" role="presentation"><rect x="0" y="0" width="240" height="96" rx="7" fill="#e6eee5"/><rect x="0" y="59" width="240" height="37" fill="#84918b"/><path d="M0 57H240" stroke="#fff" stroke-width="4"/><g>${planVisuals[option.id]}</g></svg>`;
-    }
+    const photo = document.createElement('img');
+    photo.src = planImages[option.id];
+    photo.alt = '';
+    photo.loading = 'lazy';
+    visual.append(photo);
     choice.append(visual);
     for (const [className, value] of [
       ['budget-plan-label', `${option.label} · ${option.timing}`],
@@ -1097,13 +1300,30 @@ function enter3dPreview() {
 document.getElementById('budget-result-close').addEventListener('click', closeBudgetResult);
 document.getElementById('budget-result-map').addEventListener('click', closeBudgetResult);
 document.getElementById('budget-result-preview').addEventListener('click', enter3dPreview);
+const proposalSavedDialog = document.getElementById('proposal-saved-dialog');
+proposalSavedDialog.addEventListener('cancel', () => {
+  requestAnimationFrame(() => streetDetail.querySelector('.street-budget-button')?.focus());
+});
+document.getElementById('proposal-saved-view').addEventListener('click', () => {
+  proposalSavedDialog.close();
+  document.getElementById('changes-tab').click();
+});
+document.getElementById('proposal-saved-close').addEventListener('click', () => {
+  proposalSavedDialog.close();
+  streetDetail.querySelector('.street-budget-button')?.focus();
+});
 document.getElementById('budget-result-save').addEventListener('click', () => {
   const error = document.getElementById('budget-result-preview-error');
   try {
     const plan = fixedPlanForBudget(selectedPlanId, selectedBudget);
     if (!plan) throw Error('Choose a plan that fits this budget.');
-    workspace.savePlan(selectedRoad, selectedBudget, plan);
+    const saved = workspace.savePlan(selectedRoad, selectedBudget, plan);
     budgetResult.hidden = true;
+    document.getElementById('proposal-saved-title').textContent = `Proposal #${saved.number} saved`;
+    document.getElementById('proposal-saved-description').textContent =
+      `${saved.label} for ${saved.roadName} is saved in Proposed changes on this browser.`;
+    proposalSavedDialog.showModal();
+    document.getElementById('proposal-saved-view').focus();
   } catch (issue) {
     error.textContent = issue.message;
     error.hidden = false;

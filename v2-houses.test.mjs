@@ -18,6 +18,13 @@ const frekuensi118 = houses.filter(house => house.id.startsWith('generated/way/6
 assert.ok(frekuensi118.length > 0);
 assert.ok(frekuensi118.every(house => house.id.endsWith('/1')),
   'Jalan Frekuensi U16/118 must leave the inner green strip clear');
+const frekuensi140a = houses.filter(house => house.id.startsWith('generated/way/1244813258/'));
+assert.ok(frekuensi140a.every(house => house.id.endsWith('/1')),
+  'Southern Jalan Frekuensi U16/140A park strip must stay clear');
+assert.ok(houses.some(house => house.kind === 'mapped'
+  && house.coordinates[0][0] > 101.5164 && house.coordinates[0][0] < 101.5177
+  && house.coordinates[0][1] > 3.18758 && house.coordinates[0][1] < 3.1878),
+  'Mapped roofs on the residential side of U16/140A remain');
 const frekuensi113 = houses.filter(house => house.id.startsWith('generated/way/499335111/'));
 assert.ok(frekuensi113.length > 0, 'Southern Jalan Frekuensi U16/113 roofs remain');
 assert.ok(frekuensi113.every(house => house.coordinates.slice(0, -1).reduce((sum, point) => sum + point[1], 0)

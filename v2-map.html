@@ -32,6 +32,7 @@
         </div>
       </div>
       <label class="sun-toggle"><input id="sun-toggle" type="checkbox" checked> Sun shadows</label>
+      <label class="destination-toggle"><input id="destination-toggle" type="checkbox" checked><span>Walking<br>Hotspots</span></label>
       <label class="satellite-toggle"><input id="satellite-toggle" type="checkbox" disabled> Satellite</label>
     </header>
     <section class="map-panel" aria-label="Elmina map">
@@ -54,6 +55,12 @@
       <div id="map-status" class="map-status" role="status">Loading Elmina map…</div>
     </section>
   </main>
+  <aside id="activity-toast" class="activity-toast" role="status" aria-live="polite" hidden>
+    <span class="activity-toast-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg></span>
+    <span class="activity-toast-eyebrow">New Resident Report</span>
+    <p id="activity-toast-message"></p>
+    <button id="activity-toast-close" type="button" aria-label="Dismiss activity notification">&times;</button>
+  </aside>
   <dialog id="budget-dialog" class="budget-dialog" aria-labelledby="budget-title">
     <form id="budget-form" novalidate>
       <button class="budget-close" type="button" aria-label="Close budget" data-close-budget>&times;</button>
@@ -67,6 +74,18 @@
       <p id="budget-error" class="budget-error" role="alert" hidden>Enter an amount from RM10,000 to RM300,000.</p>
       <div class="budget-actions"><button type="button" class="budget-cancel" data-close-budget>Cancel</button><button type="submit" class="budget-save">Proceed</button></div>
     </form>
+  </dialog>
+  <dialog id="proposal-saved-dialog" class="proposal-saved-dialog" aria-labelledby="proposal-saved-title" aria-describedby="proposal-saved-description">
+    <div class="proposal-saved-content">
+      <span class="proposal-saved-icon" aria-hidden="true">✓</span>
+      <p class="proposal-saved-eyebrow">Proposed changes</p>
+      <h2 id="proposal-saved-title">Proposal saved</h2>
+      <p id="proposal-saved-description"></p>
+      <div class="proposal-saved-actions">
+        <button id="proposal-saved-view" type="button">View in Proposed changes</button>
+        <button id="proposal-saved-close" type="button">Back to map</button>
+      </div>
+    </div>
   </dialog>
   <div id="budget-process" class="budget-process" role="dialog" aria-modal="true" aria-labelledby="budget-process-title" hidden>
     <canvas id="budget-process-canvas" class="budget-process-canvas" aria-hidden="true"></canvas>

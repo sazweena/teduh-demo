@@ -1,3 +1,5 @@
+import { walkingDestinations } from './v2-destinations.mjs';
+
 // Planning inputs for the mapped streets around Jalan Elmina Ilham 3.
 // These values are relative priorities, not measured street temperatures.
 export const ilhamAreaBounds = [[101.5135, 3.1844], [101.5221, 3.1890]];
@@ -15,6 +17,7 @@ const routeHourWeight = {
   'Jalan Frekuensi U16/120': { 8: .95, 9: .78, 10: .65, 11: .58, 12: .55, 13: .55, 14: .58, 15: .66, 16: .74, 17: .86, 18: .8 },
 };
 
+// Preset relative walker baselines. Report cards and support add to these values.
 const streetWeight = {
   'Jalan Elmina Ilham 3': .96,
   'Jalan Elmina Ilham 2': .72,
@@ -82,27 +85,88 @@ export function streetMidpoint(roads) {
   return null;
 }
 
-export function priorityFactors(road, hour) {
+function distanceToRoadMetres(road, [longitude, latitude]) {
+  const lines = streetGeometry(road).coordinates;
+  const longitudeScale = 111320 * Math.cos(latitude * Math.PI / 180);
+  const latitudeScale = 110574;
+  let nearest = Infinity;
+  for (const line of lines) for (let index = 1; index < line.length; index++) {
+    const [startX, startY] = line[index - 1];
+    const [endX, endY] = line[index];
+    const dx = (endX - startX) * longitudeScale;
+    const dy = (endY - startY) * latitudeScale;
+    const x = (longitude - startX) * longitudeScale;
+    const y = (latitude - startY) * latitudeScale;
+    const fraction = Math.max(0, Math.min(1, (x * dx + y * dy) / (dx * dx + dy * dy || 1)));
+    nearest = Math.min(nearest, Math.hypot(x - fraction * dx, y - fraction * dy));
+  }
+  return nearest;
+}
+
+const destinationCache = new WeakMap();
+function pointDistanceMetres([fromLng, fromLat], [toLng, toLat]) {
+  return Math.hypot((fromLng - toLng) * 111320 * Math.cos(fromLat * Math.PI / 180),
+    (fromLat - toLat) * 110574);
+}
+
+export function destinationSignal(road, reportLocations = []) {
+  const points = reportLocations.filter(point => Array.isArray(point) && point.length === 2
+    && point.every(Number.isFinite));
+  if (!points.length && destinationCache.has(road)) return destinationCache.get(road);
+  const distancesByLocation = (points.length ? points : [null]).map(point =>
+    walkingDestinations.map(place => point
+      ? pointDistanceMetres(point, place.coordinates)
+      : distanceToRoadMetres(road, place.coordinates)));
+  const nearestDistances = walkingDestinations.map((_, index) =>
+    Math.min(...distancesByLocation.map(distances => distances[index])));
+  const nearestIndex = nearestDistances.indexOf(Math.min(...nearestDistances));
+  const signal = {
+    nearbyCount: nearestDistances.filter(distance => distance <= 1000).length,
+    proximity: Math.min(1, distancesByLocation.reduce((sum, distances) =>
+      sum + distances.reduce((total, distance) => total + Math.max(0, 1 - distance / 1500), 0)
+      / (walkingDestinations.length * .625), 0) / distancesByLocation.length),
+    nearestName: walkingDestinations[nearestIndex]?.name ?? null,
+    nearestDistance: nearestDistances[nearestIndex] ?? null,
+  };
+  if (!points.length) destinationCache.set(road, signal);
+  return signal;
+}
+
+export function priorityFactors(road, hour, { reportCount = 0, supportCount = 0,
+  concernKind = null, reportLocations = [] } = {}) {
+  const destinations = destinationSignal(road, reportLocations);
   const base = streetWeight[road.name]
     ?? (road.kind === 'residential' ? .54 : road.kind === 'tertiary' ? .6 : .43);
-  const isIlham3 = road.name === 'Jalan Elmina Ilham 3';
-  const commonFactor = Math.pow(base, .25);
-  const peakWalkers = isIlham3 ? 120 : Math.round(120 * commonFactor);
-  const walkerCount = Math.round(peakWalkers * (routeHourWeight[road.name]?.[hour] ?? hourWeight[hour] ?? hourWeight[13]));
-  const daylightFactor = hour <= 7 || hour >= 19 ? 0 : Math.sin(Math.PI * (hour - 7) / 12);
+  const baseWalkers = road.name === 'Jalan Elmina Ilham 3' ? 120 : Math.round(120 * Math.pow(base, .25));
+  const hourPattern = routeHourWeight[road.name]?.[hour] ?? hourWeight[hour] ?? hourWeight[13];
+  const walkerCount = Math.round(baseWalkers * hourPattern
+    + Math.max(0, reportCount) * 8 + Math.max(0, supportCount) * 4);
+  const daylight = hour <= 7 || hour >= 19 ? 0 : Math.sin(Math.PI * (hour - 7) / 12);
+  const condition = concernKind === 'hot' ? daylight
+    : concernKind === 'dark' ? 1 - daylight
+    : concernKind === 'cross' ? .88
+    : concernKind === 'broken_path' || concernKind === 'broken' ? .85 : .55;
+  const conditionLabel = concernKind === 'hot' ? 'In sun'
+    : concernKind === 'dark' ? 'Too dark'
+    : concernKind === 'cross' ? 'Crossing risk'
+    : concernKind === 'broken_path' || concernKind === 'broken' ? 'Path condition' : 'Street condition';
   return {
-    walkers: walkerCount / 120,
+    walkers: Math.min(1, walkerCount / 160),
     walkerCount,
-    exposure: (isIlham3 ? .95 : commonFactor) * daylightFactor,
-    vulnerable: isIlham3 ? .95 : commonFactor,
-    crossing: isIlham3 ? .90 : commonFactor,
-    crossingDistance: isIlham3 ? 150 : null,
+    reportCount,
+    supportCount,
+    destinations: destinations.proximity,
+    nearbyDestinations: destinations.nearbyCount,
+    nearestDestination: destinations.nearestName,
+    nearestDestinationMetres: destinations.nearestDistance,
+    condition,
+    conditionLabel,
   };
 }
 
-export function priorityAt(road, hour) {
-  const factors = priorityFactors(road, hour);
-  return factors.walkers * factors.exposure * factors.vulnerable * factors.crossing;
+export function priorityAt(road, hour, inputs = {}) {
+  const factors = priorityFactors(road, hour, inputs);
+  return factors.walkers * factors.condition * factors.destinations;
 }
 
 export function priorityColor(score) {

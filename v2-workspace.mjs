@@ -6,8 +6,20 @@ const planKey = 'teduh-v2-plans-v1';
 const legacyReportKey = 'teduh-v2-legacy-report-updates-v1';
 const frekuensiPlanSeedKey = 'teduh-v2-frekuensi-plan-seeded-v1';
 const statuses = ['Received', 'Seen', 'Planned', 'Built'];
-const kinds = { hot: 'Too hot / no shade', cross: 'Unsafe crossing', dark: 'Too dark', broken: 'Broken path' };
+const kinds = { hot: 'Too hot / no shade', cross: 'Unsafe crossing', dark: 'Poor street lighting', broken: 'Damaged footpath', broken_path: 'Damaged footpath', other: 'Other street concern' };
+const referenceVisuals = {
+  hot: { src: './assets/report-frekuensi-113-heat-photo.webp', alt: 'Reference image showing a sunny footpath with little shade' },
+  cross: { src: './assets/report-frekuensi-120-crossing-photo.webp', alt: 'Reference image showing a road without a marked crossing' },
+  dark: { src: './assets/report-dark-street-photo.webp', alt: 'Reference image showing a dark residential footpath at night' },
+  broken: { src: './assets/report-ilham-4-path-photo.webp', alt: 'Reference image showing a damaged concrete footpath' },
+  broken_path: { src: './assets/report-ilham-4-path-photo.webp', alt: 'Reference image showing a damaged concrete footpath' },
+  other: { src: './assets/report-general-street-photo.webp', alt: 'Reference image showing a residential street and footpath' },
+};
+const referenceVisual = report => report.referenceImage
+  ? { src: report.referenceImage, alt: report.referenceAlt }
+  : referenceVisuals[report.kind] || referenceVisuals.other;
 const money = value => `RM${Number(value).toLocaleString('en-MY')}`;
+const supportCountLabel = count => `Support: ${count}`;
 const collection = features => ({ type: 'FeatureCollection', features });
 const pointFeature = (item, properties = {}) => ({ type: 'Feature', geometry: { type: 'Point', coordinates: item.coordinates }, properties });
 const node = (tag, className, text) => {
@@ -56,7 +68,7 @@ export function buildSavedPlan(road, budget, plan, previous) {
   };
 }
 
-export function createWorkspace({ map, roads = [], onOpen, onEditPlan }) {
+export function createWorkspace({ map, roads = [], onOpen, onEditPlan, onReportsChange, activitySupport = new Map() }) {
   const panel = document.getElementById('workspace-panel');
   const content = document.getElementById('workspace-panel-content');
   const title = document.getElementById('workspace-panel-title');
@@ -103,7 +115,7 @@ export function createWorkspace({ map, roads = [], onOpen, onEditPlan }) {
   function loadLegacyReports() {
     let updates = {};
     try { updates = JSON.parse(localStorage.getItem(legacyReportKey) || '{}') || {}; } catch { /* Use original entries. */ }
-    return legacyReports(updates);
+    return legacyReports(updates, roads, activitySupport);
   }
   function writePlans() {
     localStorage.setItem(planKey, JSON.stringify(plans));
@@ -161,6 +173,7 @@ export function createWorkspace({ map, roads = [], onOpen, onEditPlan }) {
       const body = await response.json();
       if (!response.ok || !Array.isArray(body.reports)) throw Error(body.error || 'Reports could not load');
       reports = [...body.reports, ...loadLegacyReports()];
+      onReportsChange?.(body.reports);
       reportsState = 'ready';
       reportsError = '';
       renderReportsMap();
@@ -198,28 +211,34 @@ export function createWorkspace({ map, roads = [], onOpen, onEditPlan }) {
     }
   }
   function renderReportDetail(report) {
-    content.append(button('Back to reports', () => {
+    content.append(button('← Back to reports', () => {
       selectedReport = null; render(); content.querySelector('button')?.focus();
-    }, 'workspace-back'));
-    content.append(node('h3', '', kinds[report.kind] || 'Resident report'));
+    }, 'workspace-back workspace-report-back'));
+    content.append(node('h3', '', report.title || kinds[report.kind] || 'Resident report'));
     content.append(node('p', 'workspace-muted', report.legacy
-      ? `${report.road_name} · Earlier planner entry`
+      ? `${report.road_name} · ${report.sourceLabel}`
       : `${report.road_name || 'Elmina City Centre'} · ${new Date(report.created_at).toLocaleString('en-MY')}`));
-    if (report.illustration) {
-      const image = node('img', 'workspace-photo');
-      image.src = report.illustration;
-      image.alt = report.illustrationAlt;
-      content.append(image, node('p', 'workspace-muted', 'Generated illustration, not a resident photo.'));
-    }
     if (report.photo && /^data:image\/(jpeg|png|webp);base64,/.test(report.photo)) {
+      content.append(node('p', 'workspace-muted', 'Resident photo'));
       const photo = node('img', 'workspace-photo');
       photo.alt = 'Photo attached to resident report';
       photo.src = report.photo;
       content.append(photo);
+    } else {
+      const reference = referenceVisual(report);
+      content.append(node('p', 'workspace-muted', 'Reference image'));
+      const image = node('img', 'workspace-photo');
+      image.alt = reference.alt;
+      image.src = reference.src;
+      content.append(image);
     }
     content.append(node('p', 'workspace-report-note', report.note || 'No details added.'));
+    if (report.illustrativeSupport) content.append(node('p', 'workspace-muted',
+      `Support: ${report.me_too_count || 0}`));
     content.append(node('p', 'workspace-muted', report.legacy
-      ? 'Issue carried over from the earlier planner. Its location and details need confirmation.'
+      ? report.source === 'Resident report'
+        ? 'The map marks this street, not the exact report location.'
+        : 'Issue carried over from the earlier planner. Its location and details need confirmation.'
       : `${report.me_too_count || 0} neighbours added support · ${report.source || 'Web form'}`));
     if (report.coordinates) content.append(button(report.legacy ? 'View street on map' : 'View on map',
       () => focus(report.coordinates), 'workspace-secondary'));
@@ -270,18 +289,23 @@ export function createWorkspace({ map, roads = [], onOpen, onEditPlan }) {
     }
     const list = node('div', 'workspace-list');
     for (const item of visible) {
+      const hasResidentPhoto = typeof item.photo === 'string' && /^data:image\/(jpeg|png|webp);base64,/.test(item.photo);
+      const reference = referenceVisual(item);
+      const imageSource = hasResidentPhoto ? item.photo : reference.src;
       const card = button('', () => { selectedReport = item.id; render(); if (!item.legacy) focus(item.coordinates); },
-        item.illustration ? 'workspace-list-button workspace-report-with-image' : 'workspace-list-button');
-      if (item.illustration) {
+        imageSource ? 'workspace-list-button workspace-report-with-image' : 'workspace-list-button');
+      if (imageSource) {
+        const imageBox = node('span', 'workspace-report-image');
         const image = node('img', 'workspace-reference-image');
-        image.src = item.illustration;
-        image.alt = '';
-        card.append(image);
+        image.src = imageSource;
+        image.alt = hasResidentPhoto ? 'Resident photo' : reference.alt;
+        imageBox.append(image, node('small', 'workspace-report-image-label', hasResidentPhoto ? 'Resident photo' : 'Reference image'));
+        card.append(imageBox);
       }
-      card.append(node('strong', '', kinds[item.kind] || 'Resident report'));
+      card.append(node('strong', '', item.title || kinds[item.kind] || 'Resident report'));
       card.append(node('span', '', item.road_name || 'Elmina City Centre'));
       card.append(node('small', '', item.legacy
-        ? `${item.status} · Earlier planner · Generated illustration`
+        ? `${item.status} · ${supportCountLabel(item.me_too_count || 0)}`
         : `${item.status} · ${item.me_too_count || 0} Me too`));
       list.append(card);
     }
@@ -337,9 +361,9 @@ export function createWorkspace({ map, roads = [], onOpen, onEditPlan }) {
       content.append(node('p', 'workspace-empty', 'No proposed changes saved yet. Select a mapped street, set a budget, then save its plan.'));
       return;
     }
-    for (const plan of plans) {
+    for (const [index, plan] of plans.entries()) {
       const section = node('section', 'workspace-plan');
-      section.append(node('h3', '', plan.roadName));
+      section.append(node('h3', '', `Proposal #${plan.proposalNumber || index + 1} · ${plan.roadName}`));
       const planLabel = fixedPlanOptions.find(option => option.id === plan.planId)?.label;
       section.append(node('p', 'workspace-muted', `${planLabel ? `${planLabel} · ` : ''}${money(plan.cost)} included · ${money(plan.budget)} budget`));
       section.append(button('View on map', () => focus(plan.items.find(item => item.coordinates)?.coordinates), 'workspace-secondary'));
@@ -368,19 +392,25 @@ export function createWorkspace({ map, roads = [], onOpen, onEditPlan }) {
   }
   function render() {
     if (!active) return;
-    title.textContent = active === 'changes' ? 'Proposed changes' : 'Reports';
+    const report = active === 'reports' && selectedReport
+      ? reports.find(item => item.id === selectedReport) : null;
+    title.textContent = active === 'changes' ? 'Proposed changes' : report?.road_name || 'Reports';
     content.replaceChildren();
     if (active === 'changes') renderChanges();
     else renderReports();
   }
   function savePlan(road, budget, plan) {
     if (!plan.included.length) throw Error('Increase the budget to include a complete package.');
-    const previous = plans.find(item => item.roadName === road.name);
-    const saved = buildSavedPlan(road, budget, plan, previous);
+    const previousIndex = plans.findIndex(item => item.roadName === road.name);
+    const previous = plans[previousIndex];
+    const nextNumber = Math.max(0, ...plans.map((item, index) => item.proposalNumber || index + 1)) + 1;
+    const proposalNumber = previous?.proposalNumber || (previousIndex >= 0 ? previousIndex + 1 : nextNumber);
+    const saved = { ...buildSavedPlan(road, budget, plan, previous), proposalNumber };
     plans = [...plans.filter(item => item.id !== previous?.id), saved];
     writePlans();
     selectedChange = null;
-    setPanel('changes');
+    setPanel(null);
+    return { number: proposalNumber, label: plan.label, roadName: road.name };
   }
   function syncGoogle(nextMap) {
     googleMap = nextMap;
@@ -451,6 +481,11 @@ export function createWorkspace({ map, roads = [], onOpen, onEditPlan }) {
   try { seedFrekuensiPlan(); } catch (error) { console.warn('Could not add Frekuensi plan:', error); }
   loadPlans();
   refreshReports();
-  return { savePlan, syncGoogle, cancelPlacement, close: () => setPanel(null),
+  function refreshIllustrativeSupport() {
+    reports = reports.map(report => report.illustrativeSupport
+      ? { ...report, me_too_count: activitySupport.get(report.road_name) || 0 } : report);
+    if (active === 'reports') render();
+  }
+  return { savePlan, syncGoogle, cancelPlacement, refreshIllustrativeSupport, close: () => setPanel(null),
     isPlacing: () => Boolean(placing) };
 }
