@@ -133,6 +133,8 @@ for (const concern of mapConcerns) {
 }
 const supportLabel = count => `Support: ${count}`;
 let activityToastTimeout;
+let activityToastHideTimeout;
+let activityToastEnterFrame;
 let activitySoundContext;
 const streetInputs = road => ({
   reportCount: (reportCountByRoad.get(road.name) || 0) + (browserReportCountByRoad.get(road.name) || 0),
@@ -180,7 +182,15 @@ function playActivitySound() {
 }
 function dismissActivityToast() {
   clearTimeout(activityToastTimeout);
-  activityToast.hidden = true;
+  cancelAnimationFrame(activityToastEnterFrame);
+  if (activityToast.hidden) return;
+  activityToast.classList.remove('is-visible');
+  activityToast.classList.add('is-leaving');
+  clearTimeout(activityToastHideTimeout);
+  activityToastHideTimeout = setTimeout(() => {
+    activityToast.hidden = true;
+    activityToast.classList.remove('is-leaving');
+  }, 220);
 }
 document.getElementById('activity-toast-close').addEventListener('click', dismissActivityToast);
 function armActivitySound() {
@@ -193,7 +203,10 @@ function armActivitySound() {
 document.addEventListener('pointerdown', armActivitySound, { once: true });
 document.addEventListener('keydown', armActivitySound, { once: true });
 function showActivityToast(name, concern) {
-  dismissActivityToast();
+  clearTimeout(activityToastTimeout);
+  clearTimeout(activityToastHideTimeout);
+  cancelAnimationFrame(activityToastEnterFrame);
+  activityToast.classList.remove('is-visible', 'is-leaving');
   const street = document.createElement('strong');
   street.className = 'activity-toast-street';
   street.textContent = concern.roadName;
@@ -203,14 +216,17 @@ function showActivityToast(name, concern) {
     document.createTextNode('.'),
   );
   activityToast.hidden = false;
+  activityToastEnterFrame = requestAnimationFrame(() => {
+    activityToastEnterFrame = requestAnimationFrame(() => activityToast.classList.add('is-visible'));
+  });
   playActivitySound();
   activityToastTimeout = setTimeout(dismissActivityToast, 5000);
 }
 function addIllustrativeActivity() {
-  if (document.hidden || !priorityPins.length) return;
+  if (document.hidden || !priorityPins.length) return false;
   const available = mapConcerns.filter(concern => priorityPins.some(pin => pin.road.name === concern.roadName));
   const activity = nextActivity(available);
-  if (!activity) return;
+  if (!activity) return false;
   const roadName = activity.concern.roadName;
   activitySupport.set(roadName, (activitySupport.get(roadName) || 0) + 1);
   renderPriority();
@@ -220,8 +236,23 @@ function addIllustrativeActivity() {
     if (support) support.textContent = supportLabel(activitySupport.get(roadName));
   }
   showActivityToast(activity.name, activity.concern);
+  return true;
 }
-setInterval(addIllustrativeActivity, 20000);
+let activityCycleCount = 0;
+function scheduleActivity(delay = 8000) {
+  setTimeout(() => {
+    if (addIllustrativeActivity()) {
+      activityCycleCount++;
+      if (activityCycleCount === 3) {
+        activityCycleCount = 0;
+        scheduleActivity(15000);
+        return;
+      }
+    }
+    scheduleActivity(8000);
+  }, delay);
+}
+scheduleActivity();
 const money = amount => `RM${amount.toLocaleString('en-MY')}`;
 const budgetStorageKey = road => `teduh-v2-budget:${road.name === 'Unnamed mapped way' ? road.id : road.name}`;
 function loadStreetBudget(road) {
@@ -562,7 +593,7 @@ function showStreet(road, position = streetMidpoint([road]) || road.coordinates[
       heading.textContent = 'Resident report';
       const source = document.createElement('p');
       source.className = 'street-report-source';
-      source.textContent = report.sourceLabel;
+      source.textContent = report.reporterName ? `Reported by ${report.reporterName}` : 'Reporter not recorded';
       const support = document.createElement('p');
       support.className = 'street-report-support';
       support.dataset.reportSupport = '';
@@ -570,6 +601,16 @@ function showStreet(road, position = streetMidpoint([road]) || road.coordinates[
       const note = document.createElement('p');
       note.textContent = report.note;
       reportCard.append(heading, source, support);
+      if (report.referenceImage) {
+        const figure = document.createElement('figure');
+        figure.className = 'street-report-image';
+        const image = document.createElement('img');
+        image.src = report.referenceImage;
+        image.alt = report.referenceAlt;
+        image.loading = 'lazy';
+        figure.append(image);
+        reportCard.append(figure);
+      }
       reportCard.append(note);
     }
     const budgetButton = document.createElement('button');

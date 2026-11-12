@@ -1,5 +1,5 @@
 import { ilhamAreaBounds, streetGeometry } from './v2-street-priority.mjs';
-import { legacyReports } from './v2-report-references.mjs';
+import { legacyReports, plannedReportUpdates } from './v2-report-references.mjs';
 import { planForBudget, fixedPlanOptions } from './v2-street-plan.mjs';
 
 const planKey = 'teduh-v2-plans-v1';
@@ -8,12 +8,12 @@ const frekuensiPlanSeedKey = 'teduh-v2-frekuensi-plan-seeded-v1';
 const statuses = ['Received', 'Seen', 'Planned', 'Built'];
 const kinds = { hot: 'Too hot / no shade', cross: 'Unsafe crossing', dark: 'Poor street lighting', broken: 'Damaged footpath', broken_path: 'Damaged footpath', other: 'Other street concern' };
 const referenceVisuals = {
-  hot: { src: './assets/report-frekuensi-113-heat-photo.webp', alt: 'Reference image showing a sunny footpath with little shade' },
-  cross: { src: './assets/report-frekuensi-120-crossing-photo.webp', alt: 'Reference image showing a road without a marked crossing' },
-  dark: { src: './assets/report-dark-street-photo.webp', alt: 'Reference image showing a dark residential footpath at night' },
-  broken: { src: './assets/report-ilham-4-path-photo.webp', alt: 'Reference image showing a damaged concrete footpath' },
-  broken_path: { src: './assets/report-ilham-4-path-photo.webp', alt: 'Reference image showing a damaged concrete footpath' },
-  other: { src: './assets/report-general-street-photo.webp', alt: 'Reference image showing a residential street and footpath' },
+  hot: { src: './assets/report-frekuensi-113-heat-photo.webp', alt: 'Sunny footpath with little shade' },
+  cross: { src: './assets/report-frekuensi-120-crossing-photo.webp', alt: 'Road without a marked crossing' },
+  dark: { src: './assets/report-dark-street-photo.webp', alt: 'Dark residential footpath at night' },
+  broken: { src: './assets/report-ilham-4-path-photo.webp', alt: 'Damaged concrete footpath' },
+  broken_path: { src: './assets/report-ilham-4-path-photo.webp', alt: 'Damaged concrete footpath' },
+  other: { src: './assets/report-general-street-photo.webp', alt: 'Residential street and footpath' },
 };
 const referenceVisual = report => report.referenceImage
   ? { src: report.referenceImage, alt: report.referenceAlt }
@@ -121,6 +121,18 @@ export function createWorkspace({ map, roads = [], onOpen, onEditPlan, onReports
     localStorage.setItem(planKey, JSON.stringify(plans));
     loadPlans();
   }
+  function markStreetReportsPlanned(roadName) {
+    let updates = {};
+    try { updates = JSON.parse(localStorage.getItem(legacyReportKey) || '{}') || {}; }
+    catch { /* Start a fresh status record. */ }
+    const next = plannedReportUpdates(updates, roadName);
+    if (JSON.stringify(next) === JSON.stringify(updates)) return;
+    localStorage.setItem(legacyReportKey, JSON.stringify(next));
+    const latest = new Map(legacyReports(next, roads, activitySupport).map(report => [report.id, report]));
+    reports = reports.map(report => latest.get(report.id) || report);
+    renderReportsMap();
+    if (active === 'reports') render();
+  }
   function setPanel(view) {
     if (placing) cancelPlacement();
     const previousView = active;
@@ -215,9 +227,10 @@ export function createWorkspace({ map, roads = [], onOpen, onEditPlan, onReports
       selectedReport = null; render(); content.querySelector('button')?.focus();
     }, 'workspace-back workspace-report-back'));
     content.append(node('h3', '', report.title || kinds[report.kind] || 'Resident report'));
+    const reporter = report.reporterName || report.reporter_name;
     content.append(node('p', 'workspace-muted', report.legacy
-      ? `${report.road_name} · ${report.sourceLabel}`
-      : `${report.road_name || 'Elmina City Centre'} · ${new Date(report.created_at).toLocaleString('en-MY')}`));
+      ? `${report.road_name} · ${reporter ? `Reported by ${reporter}` : 'Reporter not recorded'}`
+      : `${report.road_name || 'Elmina City Centre'} · ${reporter ? `Reported by ${reporter}` : 'Reporter not recorded'} · ${new Date(report.created_at).toLocaleString('en-MY')}`));
     if (report.photo && /^data:image\/(jpeg|png|webp);base64,/.test(report.photo)) {
       content.append(node('p', 'workspace-muted', 'Resident photo'));
       const photo = node('img', 'workspace-photo');
@@ -226,7 +239,6 @@ export function createWorkspace({ map, roads = [], onOpen, onEditPlan, onReports
       content.append(photo);
     } else {
       const reference = referenceVisual(report);
-      content.append(node('p', 'workspace-muted', 'Reference image'));
       const image = node('img', 'workspace-photo');
       image.alt = reference.alt;
       image.src = reference.src;
@@ -299,7 +311,8 @@ export function createWorkspace({ map, roads = [], onOpen, onEditPlan, onReports
         const image = node('img', 'workspace-reference-image');
         image.src = imageSource;
         image.alt = hasResidentPhoto ? 'Resident photo' : reference.alt;
-        imageBox.append(image, node('small', 'workspace-report-image-label', hasResidentPhoto ? 'Resident photo' : 'Reference image'));
+        imageBox.append(image);
+        if (hasResidentPhoto) imageBox.append(node('small', 'workspace-report-image-label', 'Resident photo'));
         card.append(imageBox);
       }
       card.append(node('strong', '', item.title || kinds[item.kind] || 'Resident report'));
@@ -408,6 +421,7 @@ export function createWorkspace({ map, roads = [], onOpen, onEditPlan, onReports
     const saved = { ...buildSavedPlan(road, budget, plan, previous), proposalNumber };
     plans = [...plans.filter(item => item.id !== previous?.id), saved];
     writePlans();
+    markStreetReportsPlanned(road.name);
     selectedChange = null;
     setPanel(null);
     return { number: proposalNumber, label: plan.label, roadName: road.name };
