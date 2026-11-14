@@ -18,7 +18,7 @@ Sime Darby Property markets Elmina as a premier, sustainable "15-minute township
 
 Extreme heat is a real health issue. Over 50 heat-related illnesses were recorded in early 2026 alone. And when commuters were recently filmed walking under the scorching sun at Shah Alam LRT3 stations, local councils had to scramble with millions in emergency walkway budgets.
 
-Developers plant thousands of trees and build beautiful linear parks, but nobody measures whether the actual daily walking routes residents take are shaded or safe. When complaints arise, the default corporate fix is often a RM1 to 2 million footbridge. But if a township only has RM300,000, that bridge never gets built, and the street remains unusable.
+Developers plant thousands of trees and build beautiful linear parks, but the daily walking routes residents take can still lack shade or safe access. A small street budget can start with targeted planting or a shade sail while larger road works follow their own approval process.
 
 Teduh solves this problem. It is NOT a footbridge, it's an automated decision tool built on free public data. It FINDS Elmina's worst walks, picks the smartest FIXES within budget, and collects resident FEEDBACK, all before township handover.
 
@@ -28,7 +28,7 @@ Teduh solves this problem. It is NOT a footbridge, it's an automated decision to
 
 Let's talk about how our backend engine works under the hood.
 
-Instead of expensive sensors, Teduh combines free, open-source data from OpenStreetMap for footpaths, Google Open Buildings for structure heights, Meta canopy maps for trees, and MET Malaysia weather APIs. We run this through three core formulas:
+The current planner uses mapped streets, modelled walking demand, report concerns, and walking hotspots to rank where to look first. The budget step then compares three fixed packages:
 
 FIND Formula 1, Hourly Shade Percentage: At 1 PM in Shah Alam, the sun elevation hits 78 degrees/Celsius, meaning buildings provide almost 0% shade. Teduh calculates shadow vectors from building heights and layers Meta tree canopy data onto every street path to measure the exact shaded length every single hour.
 
@@ -38,11 +38,11 @@ FIND Formula 2, Priority Ranking: To decide which street needs help first, Teduh
 
 Why do we multiply instead of add? If zero people walk a street, multiplying forces the total priority score to zero, no matter how sunny it is. We never waste money shading empty back lanes.
 
-FIX Formula 3, Bang-for-Your-Buck Score:
+FIX Package Comparison:
 
-`Fix Score = Daily Walking Trips Helped ÷ (Cost of Fix ÷ RM10,000)`
+`Package cost = trees + shade sail + siting allowance`
 
-Teduh prioritizes fixes that help the most walkers per ringgit spent. For example, a RM45,000 shade sail at a bus stop that helps 900 trips gets funded before a RM70,000 street fix that helps 760 trips, maximizing daily impact within any budget cap.
+The current planner ranks streets by modelled walking demand, issue condition, and nearby walking hotspots. For a selected street, it compares three fixed packages that fit a RM1,000 to RM25,000 budget. Their costs are transparent planning allowances; no measured trips-helped value is claimed for an individual fix.
 
 ### [2:15 - 3:45] SECTION 3: LIVE DEMO WALKTHROUGH
 
@@ -56,7 +56,7 @@ Looking at the Sime Darby Planner Dashboard on the left, as I drag our time slid
 
 Step 2: FIX, The Automated Budget Engine
 
-Now I click "Next: Plan fixes". In the budget window, I set RM300,000 and press "Confirm budget". Teduh applies our Value Formula and shows 5 high-yield fixes totaling RM263,000, well below the cost of a multi-million ringgit bridge. I press "Preview on map" to show the proposed Jalan Elmina 3 bundle: 8 trees, a shade sail, and a raised zebra crossing. This single budget protects nearly 3,000 daily walking trips.
+I select Jalan Elmina Ilham 3 and click "Set budget for changes". I enter RM15,000 and press "Proceed". Teduh compares three packages: two young trees for RM1,000, one shade sail with siting allowance for RM8,000, and eight young trees plus one sail with siting allowance for RM13,000. I choose Plan C and click "Preview changes in 3D" to inspect the suggested positions. The remaining RM2,000 stays available for this street. A raised crossing would need a separate road-authority design and budget.
 
 Step 3: FEEDBACK, Closing the Loop
 
@@ -86,7 +86,7 @@ JKR = (Jabatan Kerja Raya / Public Works Department)
 
 Our 3-Month Pilot Execution:
 
-We propose testing Teduh on 1 Elmina street for 3 months. We will conduct 15-minute physical counts to calibrate our walker formula, install 1 raised crossing and 3 shade spots, and evaluate against our Go/No-Go gate at Month 3:
+We propose testing Teduh on 1 Elmina street for 3 months. We will conduct 15-minute physical counts to calibrate our walker formula, install the selected small-works package after site review, and evaluate against our Go/No-Go gate at Month 3. Any crossing would follow a separate road-authority assessment:
 
 Our Month 3 Targets: Achieve 60%+ shade at 2 PM, increase foot traffic by +10%, and answer 80% of resident reports within 7 days.
 

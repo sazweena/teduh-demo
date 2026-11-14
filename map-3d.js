@@ -1,7 +1,7 @@
 import * as maplibregl from 'https://unpkg.com/maplibre-gl@6.16.0/dist/maplibre-gl.mjs';
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://unpkg.com/three@0.180.0/examples/jsm/loaders/GLTFLoader.js';
-import { planForBudget, fixedPlanForBudget } from './v2-street-plan.mjs';
+import { budgetMin, budgetMax, defaultBudget, planForBudget, fixedPlanForBudget } from './v2-street-plan.mjs';
 import { frekuensiRoofs } from './v2-roofs.mjs';
 import { createAreaHouses } from './v2-houses.mjs';
 
@@ -9,7 +9,7 @@ const $ = id => document.getElementById(id);
 const center = [101.50761, 3.18264];
 const previewMode = new URLSearchParams(location.search).get('preview') === 'ilham3';
 const requestedBudget = Number(new URLSearchParams(location.search).get('budget'));
-const previewBudget = Number.isFinite(requestedBudget) && requestedBudget >= 10000 && requestedBudget <= 300000 ? requestedBudget : 70000;
+const previewBudget = Number.isFinite(requestedBudget) && requestedBudget >= budgetMin && requestedBudget <= budgetMax ? requestedBudget : defaultBudget;
 const requestedPlan = new URLSearchParams(location.search).get('plan');
 const previewHousePosition = [101.51837, 3.18566];
 const cameraCenter = previewMode ? previewHousePosition : [101.5124245, 3.176809];

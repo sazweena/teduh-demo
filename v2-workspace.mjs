@@ -1,9 +1,10 @@
 import { ilhamAreaBounds, streetGeometry } from './v2-street-priority.mjs';
 import { legacyReports, plannedReportUpdates } from './v2-report-references.mjs';
-import { planForBudget, fixedPlanOptions } from './v2-street-plan.mjs';
+import { defaultBudget, planForBudget, fixedPlanOptions } from './v2-street-plan.mjs';
 
 const planKey = 'teduh-v2-plans-v1';
 const legacyReportKey = 'teduh-v2-legacy-report-updates-v1';
+const residentSupportKey = 'teduh-v2-resident-support-v1';
 const frekuensiPlanSeedKey = 'teduh-v2-frekuensi-plan-seeded-v1';
 const statuses = ['Received', 'Seen', 'Planned', 'Built'];
 const kinds = { hot: 'Too hot / no shade', cross: 'Unsafe crossing', dark: 'Poor street lighting', broken: 'Damaged footpath', broken_path: 'Damaged footpath', other: 'Other street concern' };
@@ -99,23 +100,35 @@ export function createWorkspace({ map, roads = [], onOpen, onEditPlan, onReports
     if (active === 'changes') render();
   }
   function seedFrekuensiPlan() {
-    if (localStorage.getItem(frekuensiPlanSeedKey)) return;
     const road = roads.find(item => item.id === 'way/499335112' && item.name === 'Jalan Frekuensi U16/120');
     if (!road) return;
     const existing = JSON.parse(localStorage.getItem(planKey) || '[]');
     if (!Array.isArray(existing)) return;
-    if (!existing.some(item => item.roadName === road.name)) {
-      existing.push(buildSavedPlan(road, 110000, planForBudget(110000)));
+    const oldIndex = existing.findIndex(item => item.roadId === road.id && item.budget === 110000
+      && item.cost === 95000 && !item.planId && item.items?.map(work => work.id).join(',') === 'trees,sail,crossing,site'
+      && item.items.every(work => work.status === 'Proposed' && !work.locationReviewed));
+    if (oldIndex >= 0) {
+      existing[oldIndex] = buildSavedPlan(road, defaultBudget, planForBudget(defaultBudget), existing[oldIndex]);
       localStorage.setItem(planKey, JSON.stringify(existing));
       const budgetKey = `teduh-v2-budget:${road.name}`;
-      if (localStorage.getItem(budgetKey) === null) localStorage.setItem(budgetKey, '110000');
+      if (localStorage.getItem(budgetKey) === '110000') localStorage.setItem(budgetKey, String(defaultBudget));
+    }
+    if (localStorage.getItem(frekuensiPlanSeedKey)) return;
+    if (!existing.some(item => item.roadName === road.name)) {
+      existing.push(buildSavedPlan(road, defaultBudget, planForBudget(defaultBudget)));
+      localStorage.setItem(planKey, JSON.stringify(existing));
+      const budgetKey = `teduh-v2-budget:${road.name}`;
+      if (localStorage.getItem(budgetKey) === null) localStorage.setItem(budgetKey, String(defaultBudget));
     }
     localStorage.setItem(frekuensiPlanSeedKey, '1');
   }
   function loadLegacyReports() {
     let updates = {};
     try { updates = JSON.parse(localStorage.getItem(legacyReportKey) || '{}') || {}; } catch { /* Use original entries. */ }
-    return legacyReports(updates, roads, activitySupport);
+    let support = {};
+    try { support = JSON.parse(localStorage.getItem(residentSupportKey) || '{}') || {}; } catch { /* Use recorded support only. */ }
+    return legacyReports(updates, roads, new Map()).map(report => ({ ...report,
+      me_too_count: Math.max(0, Number(support[report.id]) || 0), illustrativeSupport: false }));
   }
   function writePlans() {
     localStorage.setItem(planKey, JSON.stringify(plans));
@@ -239,14 +252,15 @@ export function createWorkspace({ map, roads = [], onOpen, onEditPlan, onReports
       content.append(photo);
     } else {
       const reference = referenceVisual(report);
+      content.append(node('p', 'workspace-muted', 'Illustration of the street concern'));
       const image = node('img', 'workspace-photo');
       image.alt = reference.alt;
       image.src = reference.src;
       content.append(image);
     }
     content.append(node('p', 'workspace-report-note', report.note || 'No details added.'));
-    if (report.illustrativeSupport) content.append(node('p', 'workspace-muted',
-      `Support: ${report.me_too_count || 0}`));
+    if (report.legacy) content.append(node('p', 'workspace-muted',
+      `Support in this browser: ${report.me_too_count || 0}`));
     content.append(node('p', 'workspace-muted', report.legacy
       ? report.source === 'Resident report'
         ? 'The map marks this street, not the exact report location.'
@@ -312,7 +326,7 @@ export function createWorkspace({ map, roads = [], onOpen, onEditPlan, onReports
         image.src = imageSource;
         image.alt = hasResidentPhoto ? 'Resident photo' : reference.alt;
         imageBox.append(image);
-        if (hasResidentPhoto) imageBox.append(node('small', 'workspace-report-image-label', 'Resident photo'));
+        imageBox.append(node('small', 'workspace-report-image-label', hasResidentPhoto ? 'Resident photo' : 'Illustration'));
         card.append(imageBox);
       }
       card.append(node('strong', '', item.title || kinds[item.kind] || 'Resident report'));
@@ -488,17 +502,16 @@ export function createWorkspace({ map, roads = [], onOpen, onEditPlan, onReports
   window.addEventListener('keydown', event => { if (event.key === 'Escape' && active) setPanel(null); });
   window.addEventListener('storage', event => {
     if (event.key === planKey) loadPlans();
-    if (event.key === 'teduh-team-local-v1' || event.key === legacyReportKey) refreshReports();
+    if (event.key === 'teduh-team-local-v1' || event.key === legacyReportKey || event.key === residentSupportKey) refreshReports();
   });
   window.addEventListener('focus', refreshReports);
   setInterval(refreshReports, 20_000);
   try { seedFrekuensiPlan(); } catch (error) { console.warn('Could not add Frekuensi plan:', error); }
   loadPlans();
   refreshReports();
+  if (window.location.hash === '#reports') setPanel('reports');
   function refreshIllustrativeSupport() {
-    reports = reports.map(report => report.illustrativeSupport
-      ? { ...report, me_too_count: activitySupport.get(report.road_name) || 0 } : report);
-    if (active === 'reports') render();
+    // Session activity changes map planning inputs, not recorded resident support.
   }
   return { savePlan, syncGoogle, cancelPlacement, refreshIllustrativeSupport, close: () => setPanel(null),
     isPlacing: () => Boolean(placing) };

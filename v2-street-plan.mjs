@@ -1,51 +1,51 @@
-// Public unit references are material prices, not quotations for this street.
+// Planning allowances based on the public references documented in README.md.
+// Actual street work still needs a verge and utility check and a supplier quotation.
+export const budgetMin = 1000;
+export const budgetMax = 25000;
+export const defaultBudget = 15000;
+
 export const treeMix = [
   { name: 'Bunga Tanjung', scientific: 'Mimusops elengi', count: 4, unit: 320, role: 'Dense evergreen shade along the walking edge' },
   { name: 'Kayu Manis hutan', scientific: 'Cinnamomum iners', count: 2, unit: 380, role: 'Compact canopy near narrower planting spaces' },
   { name: 'Bungor Raya', scientific: 'Lagerstroemia speciosa', count: 2, unit: 350, role: 'Flowering canopy at wider verge sections' },
 ];
 
-export const planItems = [
-  { id: 'trees', title: 'Eight street trees', cost: 10000, detail: 'Standard trees, planting pits, soil, supports and establishment' },
-  { id: 'sail', title: 'One shade sail', cost: 15000, detail: '5 m × 3 m commercial fabric, posts, footings and installation' },
-  { id: 'crossing', title: 'Raised crossing', cost: 60000, detail: 'Road works, signs and markings; subject to road authority design' },
-  { id: 'site', title: 'Site checks and contingency', cost: 10000, detail: 'Utilities, design checks and unforeseen works' },
-];
-
-export const fullPlanCost = planItems.reduce((sum, item) => sum + item.cost, 0);
-
-// Fixed planning allowances for comparing approaches. These are not supplier quotes.
 export const fixedPlanOptions = [
   {
-    id: 'a', label: 'Plan A', title: 'Grow the canopy', timing: 'Shade grows over time',
-    summary: 'More trees at the lowest upfront cost.',
-    pros: 'More planting along the route; lower upfront cost.',
-    cons: 'Little immediate shade; trees need years of care and growth.',
+    id: 'a', label: 'Plan A', title: 'Start with trees', timing: 'Shade grows over time',
+    summary: 'Plant two young shade trees at suitable points.',
+    pros: 'Lowest cost and adds greenery to the route.',
+    cons: 'Small coverage at first; trees need time and ongoing care.',
     items: [
-      { id: 'trees', title: '12 young street trees', cost: 24000, count: 12, maturity: 'young', detail: 'Planting pits, soil, supports and establishment' },
-      { id: 'site', title: 'Site checks and contingency', cost: 10000, detail: 'Utilities, design checks and unforeseen works' },
+      { id: 'trees', title: '2 young street trees', cost: 1000, count: 2, maturity: 'young',
+        mix: [{ ...treeMix[0], count: 1 }, { ...treeMix[1], count: 1 }],
+        detail: 'RM500 each for supply, planting, soil and supports; siting needs review' },
     ],
   },
   {
-    id: 'b', label: 'Plan B', title: 'Shade now', timing: 'Fast visible shade',
-    summary: 'More shade sails where people walk today.',
-    pros: 'Cover is available as soon as sails are installed.',
-    cons: 'More manufactured materials and upkeep; adds less greenery.',
+    id: 'b', label: 'Plan B', title: 'Shade now', timing: 'Cover after installation',
+    summary: 'Add one 5 m × 3 m shade sail at a suitable walking point.',
+    pros: 'Provides cover as soon as the structure is installed.',
+    cons: 'Covers one spot; needs a suitable foundation and maintenance.',
     items: [
-      { id: 'sail', title: '3 shade sails', cost: 45000, count: 3, detail: 'Fabric, posts, footings and installation' },
-      { id: 'site', title: 'Site checks and contingency', cost: 10000, detail: 'Utilities, design checks and unforeseen works' },
+      { id: 'sail', title: '1 shade sail', cost: 7000, count: 1,
+        detail: 'Commercial fabric, four posts and footings, hardware, installation and delivery' },
+      { id: 'site', title: 'Siting and contingency', cost: 1000,
+        detail: 'Utility and foundation review; allowance for minor site changes' },
     ],
   },
   {
-    id: 'c', label: 'Plan C', title: 'Shade and safer crossing', timing: 'Fast and lasting changes',
-    summary: 'Larger nursery trees, a shade sail and a raised crossing.',
-    pros: 'Addresses shade and crossing access together; larger trees provide earlier canopy.',
-    cons: 'Highest upfront cost; crossing approval and tree siting need more work.',
+    id: 'c', label: 'Plan C', title: 'Trees and shade sail', timing: 'Cover now, canopy later',
+    summary: 'Plant eight young trees and add one shade sail.',
+    pros: 'Immediate cover at one point and a growing canopy along the route.',
+    cons: 'Needs suitable planting space, a sail foundation and ongoing care.',
     items: [
-      { id: 'trees', title: '8 larger nursery trees', cost: 40000, count: 8, maturity: 'larger', detail: 'Larger stock, planting pits, soil, supports and establishment' },
-      { id: 'sail', title: '1 shade sail', cost: 15000, count: 1, detail: 'Fabric, posts, footings and installation' },
-      { id: 'crossing', title: 'Raised crossing', cost: 60000, count: 1, detail: 'Road works, signs and markings; subject to road authority design' },
-      { id: 'site', title: 'Site checks and contingency', cost: 10000, detail: 'Utilities, design checks and unforeseen works' },
+      { id: 'trees', title: '8 young street trees', cost: 4000, count: 8, maturity: 'young', mix: treeMix,
+        detail: 'RM500 each for supply, planting, soil and supports' },
+      { id: 'sail', title: '1 shade sail', cost: 7000, count: 1,
+        detail: 'Commercial fabric, four posts and footings, hardware, installation and delivery' },
+      { id: 'site', title: 'Siting and contingency', cost: 2000,
+        detail: 'Utility, verge and foundation review; allowance for minor site changes' },
     ],
   },
 ].map(option => ({ ...option, cost: option.items.reduce((sum, item) => sum + item.cost, 0) }));
@@ -57,12 +57,6 @@ export function fixedPlanForBudget(id, budget) {
 }
 
 export function planForBudget(budget) {
-  // Keep the crossing's site allowance intact. A partially funded crossing is not shown as buildable.
-  const includedIds = budget >= fullPlanCost ? ['trees', 'sail', 'crossing', 'site']
-    : budget >= 70000 ? ['crossing', 'site']
-    : budget >= 35000 ? ['trees', 'sail', 'site']
-    : budget >= 20000 ? ['trees', 'site'] : [];
-  const included = planItems.filter(item => includedIds.includes(item.id));
-  const cost = included.reduce((sum, item) => sum + item.cost, 0);
-  return { included, cost, remaining: budget - cost, gap: Math.max(0, fullPlanCost - budget) };
+  const option = fixedPlanOptions.filter(item => item.cost <= budget).at(-1);
+  return option ? fixedPlanForBudget(option.id, budget) : null;
 }

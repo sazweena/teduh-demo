@@ -59,6 +59,7 @@ input[type=range]{display:block;width:100%;height:16px;margin:4px 0 1px;accent-c
 .street-report-support{margin:0;color:#0b715c;font-size:12px;font-weight:800}
 .street-report-source{margin:0;color:#52665b;font-size:12px}
 .street-report-image{margin:5px 0 0}
+.street-report-image figcaption{margin-top:4px;color:#52665b;font-size:11px}
 .street-report-card img{display:block;width:100%;max-height:170px;object-fit:cover;border-radius:8px}
 .street-report-card small{color:#52665b;font-size:11px}
 .street-report-card p:last-child{margin:4px 0 0;font-size:13px;line-height:1.45}
@@ -127,8 +128,8 @@ input[type=range]{display:block;width:100%;height:16px;margin:4px 0 1px;accent-c
 .budget-plan-card.is-selected{border-color:#0b715c;box-shadow:inset 0 0 0 1px #0b715c;background:#edf6ef}
 .budget-plan-card:disabled{opacity:.58;cursor:not-allowed}
 .budget-plan-card:focus-visible{outline:3px solid #0b715c;outline-offset:2px}
-.budget-plan-visual{display:block;width:100%;height:96px;overflow:hidden;border-radius:7px}
-.budget-plan-visual img{display:block;width:100%;height:100%;object-fit:cover;object-position:center 55%}
+.budget-plan-visual{display:block;width:100%;height:96px;overflow:hidden;border-radius:7px;background:#e9f2e9}
+.budget-plan-visual svg{display:block;width:100%;height:100%}
 .budget-plan-label{color:#0b715c;font-size:11px;font-weight:800}
 .budget-plan-title{font:800 20px/1.1 "Bricolage Grotesque","Segoe UI",sans-serif}
 .budget-plan-cost{font:800 25px/1 "Bricolage Grotesque","Segoe UI",sans-serif;font-variant-numeric:tabular-nums}

@@ -22,6 +22,7 @@
       <nav class="workspace-nav" aria-label="Workspace views">
         <button id="changes-tab" type="button" aria-controls="workspace-panel" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M12 7v10M7 12h10"/></svg>Proposed changes <span id="changes-count">0</span></button>
         <button id="reports-tab" type="button" aria-controls="workspace-panel" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2h9l4 4v16H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z"/><path d="M14 2v5h5M8 12h8M8 16h8"/></svg>Reports <span id="reports-count">0</span></button>
+        <a href="./future-planning.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 19h18M5 16l5-5 4 3 5-7M16 7h3v3"/></svg>Future planning</a>
         <a href="./sdp-app.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M10 18h4"/></svg>Resident app</a>
       </nav>
       <div class="time-control">
@@ -68,10 +69,10 @@
       <h2 id="budget-title">Set a budget</h2>
       <p class="budget-description">Choose the available budget for this street.</p>
       <label class="budget-label" for="budget-amount">Budget amount</label>
-      <div class="budget-input-wrap"><span>RM</span><input id="budget-amount" type="number" inputmode="numeric" min="10000" max="300000" step="1" required></div>
-      <input id="budget-slider" type="range" min="10000" max="300000" step="1000" aria-label="Budget amount">
-      <div class="budget-range"><span>RM10,000</span><span>RM300,000</span></div>
-      <p id="budget-error" class="budget-error" role="alert" hidden>Enter an amount from RM10,000 to RM300,000.</p>
+      <div class="budget-input-wrap"><span>RM</span><input id="budget-amount" type="number" inputmode="numeric" min="1000" max="25000" step="1" required></div>
+      <input id="budget-slider" type="range" min="1000" max="25000" step="500" aria-label="Budget amount">
+      <div class="budget-range"><span>RM1,000</span><span>RM25,000</span></div>
+      <p id="budget-error" class="budget-error" role="alert" hidden>Enter an amount from RM1,000 to RM25,000.</p>
       <div class="budget-actions"><button type="button" class="budget-cancel" data-close-budget>Cancel</button><button type="submit" class="budget-save">Proceed</button></div>
     </form>
   </dialog>

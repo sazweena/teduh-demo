@@ -4,7 +4,7 @@ import { frekuensiRoofs } from './v2-roofs.mjs';
 import { createAreaHouses } from './v2-houses.mjs';
 import { generateResidentRoutes } from './v2-resident-routes.mjs';
 import { startBudgetAnimation } from './v2-budget-animation.mjs';
-import { treeMix, fixedPlanOptions, fixedPlanForBudget } from './v2-street-plan.mjs';
+import { budgetMin, budgetMax, defaultBudget, fixedPlanOptions, fixedPlanForBudget } from './v2-street-plan.mjs';
 import { inIlhamArea, streetGeometry, streetMidpoint, priorityFactors, priorityAt, priorityColor } from './v2-street-priority.mjs';
 import { createWorkspace } from './v2-workspace.mjs';
 import { mapConcerns } from './v2-report-references.mjs';
@@ -111,7 +111,7 @@ let streetLabelElements = [];
 let priorityPins = [];
 let selectedRoad;
 let selectedPosition;
-let selectedBudget = 70000;
+let selectedBudget = defaultBudget;
 let selectedPlanId = null;
 let stopBudgetAnimation;
 let budgetAnimationComplete = false;
@@ -132,6 +132,10 @@ for (const concern of mapConcerns) {
   reportCountByRoad.set(concern.roadName, (reportCountByRoad.get(concern.roadName) || 0) + 1);
 }
 const supportLabel = count => `Support: ${count}`;
+function savedResidentSupport(reportId) {
+  try { return Math.max(0, Number(JSON.parse(localStorage.getItem('teduh-v2-resident-support-v1') || '{}')[`archive-${reportId}`]) || 0); }
+  catch { return 0; }
+}
 let activityToastTimeout;
 let activityToastHideTimeout;
 let activityToastEnterFrame;
@@ -231,10 +235,6 @@ function addIllustrativeActivity() {
   activitySupport.set(roadName, (activitySupport.get(roadName) || 0) + 1);
   renderPriority();
   workspace?.refreshIllustrativeSupport();
-  if (selectedRoad?.name === roadName) {
-    const support = streetDetail.querySelector('[data-report-support]');
-    if (support) support.textContent = supportLabel(activitySupport.get(roadName));
-  }
   showActivityToast(activity.name, activity.concern);
   return true;
 }
@@ -256,11 +256,11 @@ scheduleActivity();
 const money = amount => `RM${amount.toLocaleString('en-MY')}`;
 const budgetStorageKey = road => `teduh-v2-budget:${road.name === 'Unnamed mapped way' ? road.id : road.name}`;
 function loadStreetBudget(road) {
-  selectedBudget = 70000;
+  selectedBudget = defaultBudget;
   selectedPlanId = null;
   try {
     const storedBudget = Number(localStorage.getItem(budgetStorageKey(road)));
-    if (Number.isInteger(storedBudget) && storedBudget >= 10000 && storedBudget <= 300000) {
+    if (Number.isInteger(storedBudget) && storedBudget >= budgetMin && storedBudget <= budgetMax) {
       selectedBudget = storedBudget;
     }
     selectedPlanId = localStorage.getItem(`teduh-v2-plan-option:${road.name}`);
@@ -590,14 +590,14 @@ function showStreet(road, position = streetMidpoint([road]) || road.coordinates[
     if (report) {
       reportCard.className = 'street-report-card';
       const heading = document.createElement('h3');
-      heading.textContent = 'Resident report';
+      heading.textContent = 'Street concern';
       const source = document.createElement('p');
       source.className = 'street-report-source';
       source.textContent = report.reporterName ? `Reported by ${report.reporterName}` : 'Reporter not recorded';
       const support = document.createElement('p');
       support.className = 'street-report-support';
       support.dataset.reportSupport = '';
-      support.textContent = supportLabel(activitySupport.get(road.name) || 0);
+      support.textContent = supportLabel(savedResidentSupport(report.id));
       const note = document.createElement('p');
       note.textContent = report.note;
       reportCard.append(heading, source, support);
@@ -609,6 +609,9 @@ function showStreet(road, position = streetMidpoint([road]) || road.coordinates[
         image.alt = report.referenceAlt;
         image.loading = 'lazy';
         figure.append(image);
+        const caption = document.createElement('figcaption');
+        caption.textContent = 'Illustration';
+        figure.append(caption);
         reportCard.append(figure);
       }
       reportCard.append(note);
@@ -1071,8 +1074,8 @@ window.addEventListener('keydown', event => {
   if (event.key === 'Escape' && !streetDetail.hidden) hideStreetDetail();
 });
 timeSlider.addEventListener('input', updateTime);
-const budgetSnapValue = 150000;
-const budgetSnapDistance = 6000;
+const budgetSnapValue = defaultBudget;
+const budgetSnapDistance = 500;
 let budgetPointerSliding = false;
 budgetSlider.addEventListener('pointerdown', () => { budgetPointerSliding = true; });
 window.addEventListener('pointerup', () => { budgetPointerSliding = false; });
@@ -1086,7 +1089,7 @@ budgetSlider.addEventListener('input', () => {
 });
 budgetAmount.addEventListener('input', () => {
   const amount = Number(budgetAmount.value);
-  if (amount >= 10000 && amount <= 300000) {
+  if (amount >= budgetMin && amount <= budgetMax) {
     budgetSlider.value = String(amount);
     budgetError.hidden = true;
   }
@@ -1094,7 +1097,7 @@ budgetAmount.addEventListener('input', () => {
 budgetForm.addEventListener('submit', event => {
   event.preventDefault();
   const amount = Number(budgetAmount.value);
-  if (!Number.isInteger(amount) || amount < 10000 || amount > 300000) {
+  if (!Number.isInteger(amount) || amount < budgetMin || amount > budgetMax) {
     budgetError.hidden = false;
     budgetAmount.focus();
     return;
@@ -1207,11 +1210,6 @@ budgetProcessAction.addEventListener('click', () => {
 function renderPlanOptions() {
   const options = document.getElementById('budget-plan-options');
   options.replaceChildren();
-  const planImages = {
-    a: './assets/plan-a-young-trees.webp',
-    b: './assets/plan-b-shade-sails.webp',
-    c: './assets/plan-c-shade-crossing.webp',
-  };
   for (const [index, option] of fixedPlanOptions.entries()) {
     const available = option.cost <= selectedBudget;
     const choice = document.createElement('button');
@@ -1224,11 +1222,15 @@ function renderPlanOptions() {
     const visual = document.createElement('span');
     visual.className = `budget-plan-visual budget-plan-visual-${option.id}`;
     visual.setAttribute('aria-hidden', 'true');
-    const photo = document.createElement('img');
-    photo.src = planImages[option.id];
-    photo.alt = '';
-    photo.loading = 'lazy';
-    visual.append(photo);
+    const treeCount = option.items.find(item => item.id === 'trees')?.count || 0;
+    const sailCount = option.items.find(item => item.id === 'sail')?.count || 0;
+    const trees = Array.from({ length: treeCount }, (_, treeIndex) => {
+      const x = (treeCount === 2 ? 108 : 24) + (treeIndex % 4) * 40;
+      const y = treeCount > 4 ? 26 + Math.floor(treeIndex / 4) * 38 : 47;
+      return `<circle cx="${x}" cy="${y}" r="11" fill="#4b9362"/><path d="M${x} ${y + 10}v11" stroke="#66513a" stroke-width="3"/>`;
+    }).join('');
+    const sail = sailCount ? `<g transform="translate(${treeCount ? 0 : -70} 0)"><path d="M184 19l95 14-75 52z" fill="#e3a665" stroke="#b46a3b" stroke-width="2"/><path d="M184 19v72m95-58v58m-75-6v6" stroke="#52685c" stroke-width="3"/></g>` : '';
+    visual.innerHTML = `<svg viewBox="0 0 300 96" role="presentation" focusable="false"><path d="M0 82h300" stroke="#d7e6d6" stroke-width="6"/>${trees}${sail}</svg>`;
     choice.append(visual);
     for (const [className, value] of [
       ['budget-plan-label', `${option.label} · ${option.timing}`],
@@ -1306,12 +1308,12 @@ function renderBudgetResult() {
   document.getElementById('budget-result-tree-intro').textContent = treeItem.maturity === 'young'
     ? 'Young nursery trees establish before they provide broad canopy. The mix and positions need a verge and utility check.'
     : 'Larger nursery trees can provide earlier canopy, but still need establishment and a verge and utility check.';
-  for (const tree of treeMix) {
+  for (const tree of treeItem.mix) {
     const row = document.createElement('div');
     row.className = 'budget-result-tree';
     const identity = document.createElement('div');
     const name = document.createElement('strong');
-    name.textContent = `${tree.count * treeItem.count / 8} × ${tree.name}`;
+    name.textContent = `${tree.count} × ${tree.name}`;
     const scientific = document.createElement('em');
     scientific.textContent = tree.scientific;
     const role = document.createElement('p');

@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f8fbff">
+  <title>Teduh | Future planning</title>
+  <link rel="icon" href="./assets/teduh-icon-navbar.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="./future-planning.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="./v2-map.html"><img src="./assets/teduh-icon-navbar.svg" alt="" width="34" height="34">Teduh</a>
+    <nav aria-label="Main navigation">
+      <a href="./v2-map.html">Elmina map</a>
+      <a href="./v2-map.html#reports">Reports</a>
+      <a href="./future-planning.html" aria-current="page">Future planning</a>
+    </nav>
+  </header>
+  <main>
+    <div class="page-heading">
+      <div><h1>Plan a more walkable Elmina</h1><p>Use mapped walking concerns to shape routes in future neighbourhoods.</p></div>
+      <a class="map-back" href="./v2-map.html">Back to Elmina map <span aria-hidden="true">↗</span></a>
+    </div>
+    <div class="planning-layout">
+      <aside class="insights" aria-labelledby="insights-title">
+        <h2 id="insights-title">Walking concerns</h2>
+        <p class="panel-intro">Select a concern to apply a design change.</p>
+        <div id="insight-buttons" class="insight-buttons" role="group" aria-label="Walking concerns"></div>
+        <div class="elmina-input"><span>Mapped in Elmina</span><strong id="concern-street"></strong><p id="concern-description"></p></div>
+      </aside>
+      <section class="plan" aria-label="Future neighbourhood walking plan">
+        <div class="plan-toolbar"><div><h2>Future neighbourhood plan</h2><p>Explore routes from homes to daily destinations.</p></div><div class="stage-toggle" role="group" aria-label="Plan comparison"><button type="button" data-stage="before">Base layout</button><button type="button" data-stage="planned" aria-pressed="true">Revised layout</button></div></div>
+        <div class="map-wrap"><svg id="future-map" viewBox="0 0 1000 650" role="img" aria-label="Neighbourhood plan with selected home, destinations and walking route"></svg><div class="map-legend"><span><i class="line-key"></i>Walking route</span><span><i class="green-key"></i>Shade planting</span><span><i class="dot-key"></i>Design change</span></div></div>
+        <p class="mobile-map-hint">Swipe the map to explore the full route.</p>
+        <div class="home-picker"><span>Start from</span><div id="home-buttons" role="group" aria-label="Choose a home"></div></div>
+      </section>
+      <aside class="access" aria-labelledby="access-title">
+        <h2 id="access-title">Walking access</h2><p class="panel-intro">Walking times from <strong id="home-name">Home A</strong></p><p id="access-summary" class="access-summary"></p>
+        <div id="destination-buttons" class="destinations" role="group" aria-label="Choose a destination"></div>
+        <div class="comparison"><span id="comparison-label">Selected walk</span><div class="compare-values"><div><small>Base layout</small><strong id="before-time">—</strong></div><span aria-hidden="true">→</span><div><small>Revised layout</small><strong id="after-time">—</strong></div></div><p id="comparison-detail"></p></div>
+        <div class="design-takeaway"><h3>Design response</h3><p id="design-action"></p></div>
+      </aside>
+    </div>
+  </main>
+  <script type="module" src="./future-planning.js"></script>
+</body>
+</html>
